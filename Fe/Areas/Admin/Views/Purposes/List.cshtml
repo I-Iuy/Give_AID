@@ -1,0 +1,52 @@
+﻿@model List<Fe.Areas.Admin.Controllers.PurposesController.PurposeModel>
+@{
+    ViewData["Title"] = "Purposes List";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Purposes</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active">Purposes</li>
+    </ol>
+
+    <div class="mb-3">
+        <a asp-area="Admin" asp-controller="Purposes" asp-action="Add" class="btn btn-success"><i class="fas fa-plus"></i> Add Purpose</a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table"></i>
+            Purpose List
+        </div>
+        <div class="card-body">
+            <table id="datatablesSimple" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Total Donated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>$@item.TotalDonated.ToString("N0")</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

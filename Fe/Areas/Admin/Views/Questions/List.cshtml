@@ -1,0 +1,58 @@
+﻿@model List<Fe.Areas.Admin.Controllers.QuestionsController.QuestionModel>
+@{
+    ViewData["Title"] = "Questions";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Questions for Program ID: @ViewBag.ProgramId</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Programs" asp-action="List">Programs</a>
+        </li>
+        <li class="breadcrumb-item active">Questions</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-question-circle"></i> User Questions</div>
+        <div class="card-body">
+            <table id="datatablesSimple" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Question</th>
+                        <th>Answer</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var question in Model)
+                    {
+                        <tr>
+                            <td>@question.UserName</td>
+                            <td>@question.Content</td>
+                            <td>@question.Answer</td>
+
+                            <td>
+                                <a href="#" class="btn btn-sm btn-primary"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#replyModal"
+                                   data-user="@question.UserName"
+                                   data-content="@question.Content"
+                                   data-answer="@question.Answer">
+                                    <i class="fas fa-reply"></i> Reply
+                                </a>
+                                <a href="#" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

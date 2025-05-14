@@ -1,0 +1,32 @@
+﻿@{
+    ViewData["Title"] = "Add Page";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Page</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="ContentPages" asp-action="List">Pages</a></li>
+        <li class="breadcrumb-item active">Add</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form>
+                <div class="mb-3">
+                    <label class="form-label">Page Title</label>
+                    <input type="text" class="form-control" name="Title" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Content</label>
+                    <textarea class="form-control" name="Content" rows="6"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button type="reset" class="btn btn-secondary">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>

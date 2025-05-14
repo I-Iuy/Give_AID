@@ -1,0 +1,55 @@
+﻿@model List<Fe.Areas.Web.Controllers.HomeController.FeatureCard>
+
+@{
+    ViewData["Title"] = "Donation History";
+    Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+    var rnd = new Random(); 
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Donation History</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a></li>
+        <li class="breadcrumb-item active">Donation History</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table"></i>
+            Your Past Donations
+        </div>
+        <div class="card-body">
+            <table id="datatablesSimple" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Purpose</th>
+                        <th>Program Title</th>
+                        <th>Amount ($)</th>
+                        <th>Donated At</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var statusIndex = rnd.Next(0, 3); 
+                        string status = statusIndex == 0 ? "Success" : statusIndex == 1 ? "Pending" : "Failed";
+                        string badgeClass = status switch
+                        {
+                            "Success" => "badge bg-success",
+                            "Pending" => "badge bg-warning text-dark",
+                            _ => "badge bg-danger"
+                        };
+                        <tr>
+                            <td>@item.Cause</td>
+                            <td>@item.Title</td>
+                            <td>$@(rnd.Next(10, 100) * 10)</td>
+                            <td>@DateTime.Now.AddDays(-rnd.Next(1, 30)).ToString("yyyy-MM-dd")</td>
+                            <td><span class="@badgeClass">@status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

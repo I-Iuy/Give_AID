@@ -1,0 +1,180 @@
+﻿@model Fe.Areas.Web.Controllers.HomeController.FeatureCard
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Page content-->
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Post content-->
+            <article>
+                <!-- Post header-->
+                <header class="mb-4">
+                    <!-- Post title-->
+                    <h1 class="fw-bolder mb-1">@Model.Title</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item">
+                            <a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        @if (ViewBag.ReturnToAll == true)
+                        {
+                            <li class="breadcrumb-item">
+                                <a asp-area="Web" asp-controller="Home" asp-action="AllCampaigns">All Campaigns</a>
+                            </li>
+                        }
+                        <li class="breadcrumb-item active">@Model.Title</li>
+                    </ol>
+                    <!-- Post meta content-->
+                    <div class="text-muted fst-italic mb-2">Posted on January 1, 2023 by NGO Platform</div>
+                    <!-- Post category (Cause)-->
+                    <a class="badge bg-danger text-decoration-none link-light" href="#">@Model.Cause</a>
+                </header>
+                <!-- Preview image figure-->
+                <figure class="mb-4">
+                    <img class="img-fluid rounded" src="https://dummyimage.com/900x400/ced4da/6c757d.jpg" alt="Post Banner" />
+                </figure>
+                <!-- Post content-->
+                <section class="mb-5">
+                    <p class="fs-5 mb-4">@Model.Description</p>
+                    <p class="fs-5 mb-4">The universe is large and old, and the ingredients for life as we know it are everywhere, so there's no reason to think that Earth would be unique in that regard.</p>
+                    <p class="fs-5 mb-4">If you get asteroids about a kilometer in size, those are large enough and carry enough energy into our system to disrupt transportation, communication, and the food chains.</p>
+
+                    <h2 class="fw-bolder mb-4 mt-5">We Believe in Change</h2>
+                    <p class="fs-5 mb-4">Sharing knowledge, providing aid, and building sustainable systems for underserved communities is what drives our mission.</p>
+                    <p class="fs-5 mb-4">Every contribution matters — whether it’s time, money, or effort — toward building a better future for all.</p>
+                </section>
+            </article>
+            
+            <!-- Post partners&NGOs-->
+            @if ((Model.Partners?.Any() ?? false) || (Model.NGOs?.Any() ?? false))
+            {
+                <section class="mb-5">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">Program Collaborators</h5>
+                            <div class="row">
+                                @if (Model.Partners?.Any() ?? false)
+                                {
+                                    <div class="col-md-6 mb-4">
+                                        <h6 class="fw-bold mb-3">Partners</h6>
+                                        <ul class="list-group list-group-flush">
+                                            @foreach (var partner in Model.Partners)
+                                            {
+                                                <li class="list-group-item d-flex align-items-center">
+                                                    <img src="@partner.LogoUrl" alt="@partner.Name"
+                                                         class="rounded-circle me-3" width="32" height="32" />
+                                                    <span>@partner.Name</span>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+
+                                @if (Model.NGOs?.Any() ?? false)
+                                {
+                                    <div class="col-md-6 mb-4">
+                                        <h6 class="fw-bold mb-3">NGOs</h6>
+                                        <ul class="list-group list-group-flush">
+                                            @foreach (var ngo in Model.NGOs)
+                                            {
+                                                <li class="list-group-item d-flex align-items-center">
+                                                    <img src="@ngo.LogoUrl" alt="@ngo.Name"
+                                                         class="rounded-circle me-3" width="32" height="32" />
+                                                    <span>@ngo.Name</span>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            }
+
+            <section class="mb-5">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <!-- Comment form-->
+                        <form class="mb-4">
+                            <textarea class="form-control mb-2" rows="3" placeholder="Join the discussion and leave a comment!"></textarea>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="anonymousCheck" />
+                                <label class="form-check-label" for="anonymousCheck">
+                                    Post anonymously
+                                </label>
+                            </div>
+                        </form>
+
+                        <!-- Comment with nested comments-->
+                        <div class="d-flex mb-4">
+                            <!-- Parent comment-->
+
+                            <div class="ms-3">
+                                <div class="fw-bold">UserName</div>
+                                If you're going to lead a space frontier, it has to be government; it'll never be private enterprise. Because the space frontier is dangerous, and it's expensive, and it has unquantified risks.
+                                <!-- Child comment 1-->
+                                <div class="d-flex mt-4">
+
+                                    <div class="ms-3">
+                                        <div class="fw-bold">Admin</div>
+                                        And under those conditions, you cannot establish a capital-market evaluation of that enterprise. You can't get investors.
+                                    </div>
+                                </div>                      
+                            </div>
+                        </div>
+                        <!-- Single comment-->
+                        <div class="d-flex">
+
+                            <div class="ms-3">
+                                <div class="fw-bold">UserName</div>
+                                When I look at the universe and all the ways the universe wants to kill us, I find it hard to reconcile that with statements of beneficence.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Side widgets-->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 80px;">
+                @Html.Partial("_SupportPurpose")
+                @Html.Partial("_UrgentProgramsWidget")
+
+                <!-- Interest Subscription Widget -->
+                <div class="card mb-4">
+                    <div class="card-header">Stay Informed</div>
+                    <div class="card-body">
+                        <p class="mb-3">Would you like to receive updates about future programs?</p>
+                        <a class="btn btn-outline-primary w-100" href="#">
+                            <i class="bi bi-bell-fill"></i> Get Notifications
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Donate Widget -->
+                <div class="card mb-4">
+                    <div class="card-header">Make a Difference</div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            Would you like to donate to the <strong>@ViewBag.Title</strong> program?
+                        </p>
+                        <a class="btn btn-outline-danger w-100"
+                           data-bs-toggle="modal"
+                           data-bs-target="#donationFilterModal"
+                           data-selected-cause="@Model.Cause"
+                           data-program-title="@Model.Title">
+                            <i class="bi bi-heart-fill me-1"></i> Donate Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

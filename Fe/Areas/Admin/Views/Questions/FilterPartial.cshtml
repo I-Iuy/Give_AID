@@ -1,0 +1,44 @@
+﻿@model Fe.Areas.Admin.Controllers.QuestionsController.QuestionModel
+
+<div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="replyModalLabel">Reply to Question</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Question from @Model?.UserName:</label>
+                        <p class="form-control-plaintext">@Model?.Content</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="answerInput" class="form-label">Your Answer</label>
+                        <textarea class="form-control" id="answerInput" name="Answer" rows="5"
+                                  placeholder="Type your answer here...">@Model?.Answer</textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const replyModal = document.getElementById('replyModal');
+    replyModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const user = button.getAttribute('data-user');
+        const content = button.getAttribute('data-content');
+        const answer = button.getAttribute('data-answer');
+
+        replyModal.querySelector('.modal-body .form-label.fw-bold').textContent = `Question from ${user}:`;
+        replyModal.querySelector('.modal-body .form-control-plaintext').textContent = content;
+        replyModal.querySelector('#answerInput').value = answer || '';
+    });
+</script>
+

@@ -1,0 +1,66 @@
+﻿@model List<Fe.Areas.Admin.Controllers.ProgramsController.ProgramModel>
+@{
+    ViewData["Title"] = "Programs List";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Programs</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active">Programs</li>
+    </ol>
+
+    <div class="mb-3">
+        <a asp-area="Admin" asp-controller="Programs" asp-action="Add" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Program
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table"></i>
+            Program List
+        </div>
+        <div class="card-body">
+            <table id="datatablesSimple" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Purpose</th>
+                        <th>Total Donated</th>
+                        <th>Question</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>@item.Purpose</td>
+                            <td>$@item.TotalDonated.ToString("N0")</td>
+                            <td>
+                                <a asp-area="Admin" asp-controller="Questions" asp-action="List" asp-route-programId="@item.Id"
+                                   class="btn btn-info btn-sm text-white">
+                                    <i class="fas fa-question-circle"></i> View 
+                                </a>
+                            </td>
+                            <td>
+                                <a asp-area="Admin" asp-controller="Programs" asp-action="Edit" asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-warning text-white">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="#" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

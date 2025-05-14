@@ -1,0 +1,56 @@
+﻿@model List<Fe.Areas.Admin.Controllers.PartnersController.PartnerModel>
+@{
+    ViewData["Title"] = "Partners";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Partners</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+        <li class="breadcrumb-item active">Partners</li>
+    </ol>
+
+    <div class="mb-3">
+        <a asp-area="Admin" asp-controller="Partners" asp-action="Add" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Partner
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-table"></i> Partner List</div>
+        <div class="card-body">
+            <table id="datatablesSimple" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Logo</th>
+                        <th>Contract</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var partner in Model)
+                    {
+                        <tr>
+                            <td>@partner.Name</td>
+                            <td><img src="@partner.LogoUrl" alt="Logo" style="height: 40px;" /></td>
+                            <td>
+                                <a href="@partner.ContractFile" class="btn btn-info btn-sm text-white" target="_blank">
+                                    <i class="fas fa-eye"></i> View 
+                                </a>
+                            </td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@partner.Id" class="btn btn-sm btn-warning text-white">
+                                    
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="#" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

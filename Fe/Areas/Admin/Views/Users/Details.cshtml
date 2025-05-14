@@ -1,0 +1,102 @@
+﻿@model Fe.Areas.Admin.Controllers.UsersController.User
+
+@{
+    ViewData["Title"] = "User Details";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">User Details</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Users" asp-action="List">Users</a>
+        </li>
+        <li class="breadcrumb-item active">@Model.FullName</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-user"></i> User Information
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Username:</strong> @Model.UserName
+                </div>
+                <div class="col-md-6">
+                    <strong>Full Name:</strong> @Model.FullName
+                </div>
+                <div class="col-md-6 mt-2">
+                    <strong>Email:</strong> @Model.Email
+                </div>
+                <div class="col-md-6 mt-2">
+                    <strong>Phone:</strong> @Model.PhoneNumber
+                </div>
+                <div class="col-md-6 mt-2">
+                    <strong>Address:</strong> @Model.Address
+                </div>
+                <div class="col-md-6 mt-2">
+                    <strong>Interested:</strong>
+                    @if (Model.IsInterested)
+                    {
+                        <span class="badge bg-success">Yes</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">No</span>
+                    }
+                </div>
+                <div class="col-md-6 mt-2">
+                    <strong>Total Donated:</strong> <span class="text-primary fw-bold">$@Model.TotalDonated</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-hand-holding-usd"></i> Donation History
+        </div>
+        <div class="card-body">
+            @if (Model.Donations != null && Model.Donations.Any())
+            {
+                <table id="datatablesSimple" class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Purpose</th>
+                            <th>Program Title</th>
+                            <th class="text-end">Amount ($)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.Donations.OrderByDescending(x => x.Date))
+                        {
+                            string badgeClass = d.Status switch
+                            {
+                                "Success" => "badge bg-success",
+                                "Pending" => "badge bg-warning text-dark",
+                                _ => "badge bg-danger"
+                            };
+                            <tr>
+                                <td>@d.Date.ToString("dd/MM/yyyy")</td>
+                                <td>@d.Purpose</td>
+                                <td>@(string.IsNullOrEmpty(d.Program) ? "-" : d.Program)</td>
+                                <td class="text-end">$@d.Amount</td>
+                                <td><span class="@badgeClass">@d.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">No donation records available.</p>
+            }
+        </div>
+    </div>
+</div>

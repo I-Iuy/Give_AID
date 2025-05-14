@@ -1,0 +1,60 @@
+﻿@model Fe.Areas.Admin.Controllers.ProgramsController.ProgramModel
+@{
+    ViewData["Title"] = "Edit Program";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Program</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Programs" asp-action="List">Programs</a>
+        </li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form>
+                <div class="mb-3">
+                    <label class="form-label">Program Name</label>
+                    <input type="text" class="form-control" name="Name" value="@Model.Name" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Purpose</label>
+                    <select class="form-select" name="Purpose">
+                        <option selected>@Model.Purpose</option>
+                        <option value="Natural Disaster">Natural Disaster</option>
+                        <option value="Pandemic">Pandemic</option>
+                        <option value="Disability">Disability</option>
+                        <option value="Education">Education</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" name="Description" rows="4">@Model.Content</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <button type="button" class="btn btn-outline-primary" id="showVideoBtn">
+                        <i class="fas fa-video"></i> Add Video
+                    </button>
+                </div>
+
+                <div class="mb-3" id="videoLinkGroup" style="display:none;">
+                    <label class="form-label">Video Link</label>
+                    <input type="text" class="form-control" name="VideoLink" value="@Model.VideoUrl" />
+                </div>
+
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                <button type="reset" class="btn btn-secondary">Cancel</button>
+
+            </form>
+        </div>
+    </div>
+</div>

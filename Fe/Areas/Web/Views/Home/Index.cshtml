@@ -1,0 +1,161 @@
+﻿@model List<Fe.Areas.Web.Controllers.HomeController.FeatureCard>
+
+@{
+    ViewData["Title"] = "Home";
+    Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container px-4 px-lg-5">
+   <!-- Heading Row-->
+<div class="row gx-4 gx-lg-5 align-items-center my-5">
+    <div class="col-lg-7">
+        <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <img src="https://dummyimage.com/900x400/ced4da/6c757d.jpg" class="d-block w-100 rounded" alt="Slide 1">
+                </div>
+                <div class="carousel-item">
+                    <img src="https://dummyimage.com/900x400/b0b0b0/333" class="d-block w-100 rounded" alt="Slide 2">
+                </div>
+                <div class="carousel-item">
+                    <img src="https://dummyimage.com/900x400/a0a0a0/000" class="d-block w-100 rounded" alt="Slide 3">
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <h1 class="font-weight-light">@ViewData["IntroTitle"]</h1>
+        <p>@ViewData["IntroDescription"]</p>
+            <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#donationFilterModal">
+                @ViewData["IntroButtonText"]
+            </a>
+    </div>
+</div>
+    <!-- Call to Action-->
+    <div class="card text-white bg-secondary my-5 py-4 text-center">
+        <div class="card-body">
+            <p class="text-white m-0">This call to action card is a great place to showcase some important information or display a clever tagline!</p>
+        </div>
+    </div>
+    <!-- Content Row -->
+    <div class="row gx-4 gx-lg-5">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4 mb-5">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h4 class="card-title">@item.Title</h4>
+                        <div class="position-relative">
+                            <img class="img-fluid rounded mb-3" src="@item.ImageUrl" alt="@item.Title" />
+                            <span class="badge bg-danger text-white position-absolute top-0 start-0 m-2">
+                                @item.Cause
+                            </span>
+                        </div>
+                        <p class="card-text">@item.Description</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <a class="btn btn-primary btn-sm"
+                           asp-area="Web"
+                           asp-controller="Home"
+                           asp-action="Post"
+                           asp-route-id="@Model.IndexOf(item)">
+                            Find Out More
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if ((int)ViewBag.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                        <a class="page-link"
+                           asp-area="Web"
+                           asp-controller="Home"
+                           asp-action="Index"
+                           asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+    <!--Call to Action-->
+    <div class="card text-white bg-danger my-5 py-4">
+        <div class="container text-center">
+            <h2 class="fw-bold mb-5">The Numbers That Matter</h2>
+            <div class="row justify-content-center">
+                <div class="col-6 col-md-3 mb-4 mb-md-0">
+                    <div class="fs-6">Programs</div>
+                    <div class="fs-3 fw-bold">113</div>
+                </div>
+                <div class="col-6 col-md-3 mb-4 mb-md-0">
+                    <div class="fs-6">Partners & NGOs</div>
+                    <div class="fs-3 fw-bold">35</div>
+                </div>
+                <div class="col-6 col-md-3 mb-4 mb-md-0">
+                    <div class="fs-6">Members</div>
+                    <div class="fs-3 fw-bold">29,632</div>
+                </div>
+                <div class="col-6 col-md-3 mb-4 mb-md-0">
+                    <div class="fs-6">Total Raised ($)</div>
+                    <div class="fs-3 fw-bold">$2.7M</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mb-3 my-5 py-4 text-center">
+        <h2 class="fw-bold mb-3">The Other 50 Is in You</h2>
+        <p class="lead">
+            The number 50 represents something incomplete — lost to circumstances. <br />
+            But the other 50 lies within you. Be the one to complete the 100. <br />
+            A number that symbolizes relentless effort, unshaken by hardship, and the will to reach the final goal.
+        </p>
+        <div class="d-grid gap-1" style="grid-template-columns: repeat(10, 1fr);">
+            @for (int i = 1; i <= 50; i++)
+            {
+                var delay = (i * 0.05).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture); 
+                <img src="https://dummyimage.com/160x100/ced4da/6c757d&text=@($"{i}-img")"
+                     class="img-fluid w-100 animate__animated"
+                     data-animate="animate__flipInY"
+                     style="animation-delay: @($"{delay}s"); animation-duration: 1s;"
+                     alt="Moment @i" />
+            }
+
+
+        </div>
+    </div>
+
+
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const targets = document.querySelectorAll("[data-animate]");
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    el.classList.add(el.getAttribute("data-animate"));
+                    observer.unobserve(el); 
+                }
+            });
+        }, {
+            threshold: 0.2 
+        });
+
+        targets.forEach(el => observer.observe(el));
+    });
+</script>

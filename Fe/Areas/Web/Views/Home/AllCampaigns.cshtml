@@ -1,0 +1,78 @@
+﻿@model List<Fe.Areas.Web.Controllers.HomeController.FeatureCard>
+@{
+    ViewData["Title"] = "All Campaigns";
+    Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <h2 class="mt-4">All Fundraising Programs</h2>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a>
+        </li>
+        <li class="breadcrumb-item active">All Campaigns</li>
+    </ol>
+    <!-- Filter bar -->
+    <form class="row g-3 mb-4" method="get">
+        <div class="col-md-4">
+            <input name="search" class="form-control" type="text" placeholder="Search by title or description" value="@ViewBag.Search" />
+        </div>
+        <div class="col-md-4">
+            <select name="category" class="form-select">
+                <option value="">All Purpose</option>
+                @foreach (var cat in ViewBag.Categories as List<string>)
+                {
+                    <option value="@cat" selected="@(ViewBag.Category == cat ? "selected" : null)">@cat</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-primary w-100" type="submit">Filter</button>
+        </div>
+    </form>
+
+    <!-- Content Grid -->
+    <div class="row gx-4 gx-lg-5">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4 mb-5">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h4 class="card-title">@item.Title</h4>
+                        <div class="position-relative">
+                            <img class="img-fluid rounded mb-3" src="@item.ImageUrl" alt="@item.Title" />
+                            <span class="badge bg-danger text-white position-absolute top-0 start-0 m-2">
+                                @item.Cause
+                            </span>
+                        </div>
+                        <p class="card-text">@item.Description</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <a class="btn btn-primary btn-sm"
+                           asp-area="Web"
+                           asp-controller="Home"
+                           asp-action="Post"
+                           asp-route-id="@Model.IndexOf(item)"
+                           asp-route-returnToAll="true">
+                            Find Out More
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                    <a class="page-link" asp-action="AllCampaigns" asp-route-page="@i"
+                       asp-route-search="@ViewBag.Search" asp-route-category="@ViewBag.Category">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+</div>
