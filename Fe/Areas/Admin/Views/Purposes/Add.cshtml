@@ -1,4 +1,6 @@
-﻿@{
+﻿@model Fe.DTOs.Purposes.CreatePurposeDto
+
+@{
     ViewData["Title"] = "Add Purpose";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
@@ -19,12 +21,15 @@
         <div class="card-body">
             <form asp-action="Add" method="post">
                 <div class="mb-3">
-                    <label for="name" class="form-label">Purpose Name</label>
-                    <input type="text" name="name" class="form-control" id="name" placeholder="Enter purpose name..."/>
+                    <label asp-for="Title" class="form-label">Title</label>
+                    <input asp-for="Title" class="form-control" placeholder="Enter purpose name..." />
+                    <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
-                <button type="reset" class="btn btn-secondary">Cancel</button>
 
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button type="reset" class="btn btn-secondary">Cancel</button>
             </form>
         </div>
     </div>
