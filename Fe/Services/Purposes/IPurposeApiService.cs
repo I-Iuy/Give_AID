@@ -7,7 +7,7 @@ namespace Fe.Services.Purposes
     public interface IPurposeApiService
     {
         Task<IEnumerable<PurposeDto>> GetAllAsync();
-        Task<bool> CreateAsync(CreatePurposeDto dto);
-        Task<bool> DeleteAsync(int id);
+        Task CreateAsync(CreatePurposeDto dto);
+        Task DeleteAsync(int id);
     }
 }

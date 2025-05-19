@@ -40,13 +40,8 @@ namespace Fe.Areas.Admin.Controllers
 
             try
             {
-                var success = await _purposeService.CreateAsync(dto);
-                if (success)
-                {
-                    return RedirectToAction("List");
-                }
-
-                ModelState.AddModelError(string.Empty, "An unexpected error occurred.");
+                await _purposeService.CreateAsync(dto);
+                return RedirectToAction("List");
             }
             catch (HttpRequestException ex)
             {
@@ -65,9 +60,9 @@ namespace Fe.Areas.Admin.Controllers
                 {
                     ModelState.AddModelError(string.Empty, errorMessage);
                 }
-            }
 
-            return View(dto);
+                return View(dto);
+            }
         }
 
 
@@ -75,7 +70,7 @@ namespace Fe.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            var success = await _purposeService.DeleteAsync(id);
+            await _purposeService.DeleteAsync(id);
             return RedirectToAction("List");
         }
     }

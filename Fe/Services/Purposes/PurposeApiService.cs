@@ -31,24 +31,29 @@ namespace Fe.Services.Purposes
         }
 
         // Tạo mới Purpose
-        public async Task<bool> CreateAsync(CreatePurposeDto dto)
+        public async Task CreateAsync(CreatePurposeDto dto)
         {
             var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync($"{_baseUrl}/api/purpose", content);
 
-            if (response.IsSuccessStatusCode)
-                return true;
-
-            var errorMessage = await response.Content.ReadAsStringAsync(); // Lấy nội dung lỗi từ BE
-            throw new HttpRequestException(errorMessage); // Ném lên FE Controller
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage); // Ném lỗi lên Controller
+            }
         }
 
 
         // Xóa Purpose theo ID
-        public async Task<bool> DeleteAsync(int id)
+        public async Task DeleteAsync(int id)
         {
             var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/purpose/{id}");
-            return response.IsSuccessStatusCode;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage); // Ném lỗi lên Controller
+            }
         }
     }
 }
