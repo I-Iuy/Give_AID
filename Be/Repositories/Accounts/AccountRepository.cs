@@ -47,7 +47,7 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
-    public async Task<Account?> LoginAsync(string email, string password)
+    public async Task<Account?> LoginAsync(string email, string _)
     {
         return await _context.Accounts
             .FirstOrDefaultAsync(a => a.Email == email && a.IsActive);
@@ -59,6 +59,34 @@ public class AccountRepository : IAccountRepository
         if (acc == null) return false;
 
         acc.IsActive = isActive;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<Account?> GetByResetTokenAsync(string token)
+    {
+        return await _context.Accounts.FirstOrDefaultAsync(a => a.ResetToken == token && a.ResetTokenExpires > DateTime.UtcNow);
+    }
+
+    public async Task<bool> SetResetTokenAsync(string email, string token, DateTime expires)
+    {
+        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
+        if (account == null) return false;
+
+        account.ResetToken = token;
+        account.ResetTokenExpires = expires;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(string token, string newHashedPassword)
+    {
+        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.ResetToken == token && a.ResetTokenExpires > DateTime.UtcNow);
+        if (account == null) return false;
+
+        account.Password = newHashedPassword;
+        account.ResetToken = null;
+        account.ResetTokenExpires = null;
         await _context.SaveChangesAsync();
         return true;
     }

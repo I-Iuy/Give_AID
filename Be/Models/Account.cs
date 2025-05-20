@@ -13,18 +13,21 @@ namespace Be.Models
         [Required]
         public string Password { get; set; }
 
-        public string FullName { get; set; }
-        public string DisplayName { get; set; }
-        public string Phone { get; set; }
-        public string Address { get; set; }
+        public string? FullName { get; set; }
+        public string? DisplayName { get; set; }
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [Required]
         public string Role { get; set; } // "Admin", "User"
 
         public bool IsActive { get; set; } = true;
 
+        //reset password
+        public string? ResetToken { get; set; }
+        public DateTime? ResetTokenExpires { get; set; }
 
         // Navigation
         public ICollection<ContentPage>? ContentPages { get; set; }

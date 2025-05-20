@@ -4,7 +4,10 @@ using Be.Repositories.Accounts;
 using Be.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
+using System.Net.Security;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Be.Controllers
 {
@@ -14,14 +17,17 @@ namespace Be.Controllers
     {
         private readonly IAccountRepository _repository;
         private readonly JwtService _jwtService;
+        private readonly IConfiguration _config;
 
-        public AccountsController(IAccountRepository repository, JwtService jwtService)
+        public AccountsController(IAccountRepository repository, JwtService jwtService, IConfiguration config)
         {
             _repository = repository;
             _jwtService = jwtService;
+            _config = config;
         }
 
-        // POST: api/accounts/register
+        //REGISTER
+
         [HttpPost("register")]
         public async Task<IActionResult> Register(AccountCreateDto dto)
         {
@@ -46,19 +52,22 @@ namespace Be.Controllers
             return Ok(new { message = "Registration successful", result.AccountId });
         }
 
-        // POST: api/accounts/login
+        //LOGIN
         [HttpPost("login")]
         public async Task<IActionResult> Login(AccountLoginDto dto)
         {
             var account = await _repository.LoginAsync(dto.Email, dto.Password);
-            if (account == null || !BCrypt.Net.BCrypt.Verify(dto.Password, account.Password))
-                return Unauthorized("Invalid credentials or inactive account.");
+            if (account == null)
+                return Unauthorized("Email not found or account is deactivated.");
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, account.Password))
+                return Unauthorized("Invalid password.");
 
             var token = _jwtService.GenerateToken(account);
             return Ok(new { token });
         }
 
-        // GET: api/accounts/me
+        //SHOW ACCOUNT INFO
         [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetMyInfo()
@@ -81,7 +90,7 @@ namespace Be.Controllers
             return Ok(dto);
         }
 
-        // PUT: api/accounts/{id}/status?isActive=true
+        //SET ACTIVE AND DEACTIVATED WITH ACCOUNT = ADMIN
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> SetStatus(int id, [FromQuery] bool isActive)
@@ -89,6 +98,74 @@ namespace Be.Controllers
             var success = await _repository.SetAccountStatusAsync(id, isActive);
             if (!success) return NotFound();
             return Ok(new { message = $"Account {(isActive ? "activated" : "deactivated")} successfully." });
+        }
+
+        //GOOGLE LOGIN
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
+        {
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+
+            using var httpClient = new HttpClient(handler);
+            var response = await httpClient.GetAsync($"https://oauth2.googleapis.com/tokeninfo?id_token={dto.IdToken}");
+
+            if (!response.IsSuccessStatusCode)
+                return Unauthorized("Invalid Google token.");
+
+            var json = await response.Content.ReadAsStringAsync();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+
+            var email = data["email"];
+            var name = data.ContainsKey("name") ? data["name"] : "";
+            var givenName = data.ContainsKey("given_name") ? data["given_name"] : "";
+
+            
+            var account = await _repository.LoginAsync(email, "");
+            if (account == null)
+            {
+                account = new Account
+                {
+                    Email = email,
+                    FullName = name,
+                    DisplayName = givenName,
+                    Role = "User",
+                    IsActive = true,
+                    Password = ""
+                };
+
+                await _repository.CreateAsync(account);
+            }
+
+            var token = _jwtService.GenerateToken(account);
+            return Ok(new { token });
+        }
+
+        //Change Account Password
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var token = Guid.NewGuid().ToString();
+            var expires = DateTime.UtcNow.AddMinutes(15);
+
+            var success = await _repository.SetResetTokenAsync(dto.Email, token, expires);
+            if (!success) return NotFound("Email not found.");
+
+            Console.WriteLine($"[RESET TOKEN] {token}");
+            return Ok(new { token, message = "Reset token created. Use it to reset password." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var hashed = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            var success = await _repository.ResetPasswordAsync(dto.Token, hashed);
+            if (!success) return BadRequest("Invalid or expired token.");
+
+            return Ok(new { message = "Password reset successfully." });
         }
     }
 }
