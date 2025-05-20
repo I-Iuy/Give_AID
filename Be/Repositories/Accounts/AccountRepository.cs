@@ -1,4 +1,5 @@
-﻿using Be.Models;
+﻿using Be.DTOs.Account;
+using Be.Models;
 using Be.Repositories.Accounts;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -27,6 +28,7 @@ public class AccountRepository : IAccountRepository
         return account;
     }
 
+    //Admin Update all entity
     public async Task<Account?> UpdateAsync(Account account)
     {
         var acc = await _context.Accounts.FindAsync(account.AccountId);
@@ -90,4 +92,35 @@ public class AccountRepository : IAccountRepository
         await _context.SaveChangesAsync();
         return true;
     }
+
+    //User Update Account Info
+    public async Task<bool> UpdateAccountInfoAsync(int id, AccountUpdateDto dto)
+    {
+        var account = await _context.Accounts.FindAsync(id);
+        if (account == null || !account.IsActive) return false;
+
+        account.FullName = dto.FullName;
+        account.DisplayName = dto.DisplayName;
+        account.Phone = dto.Phone;
+        account.Address = dto.Address;
+        account.Name = dto.Name;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // User change Pasword when login
+    public async Task<int> ChangePasswordAsync(int id, string currentPassword, string newHashedPassword)
+    {
+        var account = await _context.Accounts.FindAsync(id);
+        if (account == null || !account.IsActive) return 0;
+
+        if (!BCrypt.Net.BCrypt.Verify(currentPassword, account.Password))
+            return 1;
+
+        account.Password = newHashedPassword;
+        await _context.SaveChangesAsync();
+        return 2;
+    }
+
 }

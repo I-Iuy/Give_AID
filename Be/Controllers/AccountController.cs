@@ -143,7 +143,7 @@ namespace Be.Controllers
             return Ok(new { token });
         }
 
-        //Change Account Password
+        //Admin Change Account Password
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
@@ -158,6 +158,7 @@ namespace Be.Controllers
             return Ok(new { token, message = "Reset token created. Use it to reset password." });
         }
 
+        //Reset Password
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
@@ -167,5 +168,60 @@ namespace Be.Controllers
 
             return Ok(new { message = "Password reset successfully." });
         }
+
+        //User Update Account Info
+        [Authorize]
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateProfile([FromBody] AccountUpdateDto dto)
+        {
+            var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(idStr, out int accountId)) return Unauthorized();
+
+            var success = await _repository.UpdateAccountInfoAsync(accountId, dto);
+            if (!success) return BadRequest("Account not found or inactive.");
+
+            return Ok(new { message = "Profile updated successfully." });
+        }
+
+        //User Change Password when logging in
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(idStr, out int accountId)) return Unauthorized();
+
+            var hashed = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            var result = await _repository.ChangePasswordAsync(accountId, dto.CurrentPassword, hashed);
+
+            if (result == 0)
+                return NotFound("Account not found or inactive.");
+
+            if (result == 1)
+                return BadRequest("Current password is incorrect.");
+
+            return Ok(new { message = "Password changed successfully." });
+        }
+
+        //Admin See All Account List on Dashboard
+        [Authorize(Roles = "Admin")]
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllAccounts()
+        {
+            var accounts = await _repository.GetAllAsync();
+
+            var result = accounts.Select(a => new AccountListItemDto
+            {
+                AccountId = a.AccountId,
+                Email = a.Email,
+                FullName = a.FullName,
+                DisplayName = a.DisplayName,
+                Role = a.Role,
+                IsActive = a.IsActive
+            });
+
+            return Ok(result);
+        }
+
     }
 }
