@@ -12,13 +12,8 @@ namespace Be.Repositories.Accounts
         Task<Account> CreateAsync(Account account);
         Task<Account?> UpdateAsync(Account account);
         Task<bool> UpdateAccountInfoAsync(int id, AccountUpdateDto dto);
-
         Task<Account?> LoginAsync(string email, string password);
         Task<bool> SetAccountStatusAsync(int id, bool isActive);
-        Task<Account?> GetByResetTokenAsync(string token);
-        Task<bool> SetResetTokenAsync(string email, string token, DateTime expires);
-        Task<bool> ResetPasswordAsync(string token, string newHashedPassword);
-
         Task<int> ChangePasswordAsync(int id, string currentPassword, string newHashedPassword);
 
     }

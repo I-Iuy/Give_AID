@@ -143,32 +143,6 @@ namespace Be.Controllers
             return Ok(new { token });
         }
 
-        //Admin Change Account Password
-
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
-        {
-            var token = Guid.NewGuid().ToString();
-            var expires = DateTime.UtcNow.AddMinutes(15);
-
-            var success = await _repository.SetResetTokenAsync(dto.Email, token, expires);
-            if (!success) return NotFound("Email not found.");
-
-            Console.WriteLine($"[RESET TOKEN] {token}");
-            return Ok(new { token, message = "Reset token created. Use it to reset password." });
-        }
-
-        //Reset Password
-        [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
-        {
-            var hashed = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-            var success = await _repository.ResetPasswordAsync(dto.Token, hashed);
-            if (!success) return BadRequest("Invalid or expired token.");
-
-            return Ok(new { message = "Password reset successfully." });
-        }
-
         //User Update Account Info
         [Authorize]
         [HttpPut("update")]
