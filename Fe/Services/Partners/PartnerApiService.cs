@@ -57,8 +57,8 @@ namespace Fe.Services.Partners
             }
 
             // Sử dụng Path để xử lý đường dẫn một cách nhất quán
-            var relativePath = fullPath.Replace("wwwroot" + Path.DirectorySeparatorChar, "").Replace(Path.DirectorySeparatorChar, '/');
-            return $"/{relativePath}";
+            var relativePath = fullPath.Replace("wwwroot", "").Replace("\\", "/");
+            return relativePath.StartsWith("/") ? relativePath : "/" + relativePath;
         }
 
         private async Task<string> SaveContractFileAsync(IFormFile file)
@@ -84,8 +84,32 @@ namespace Fe.Services.Partners
             }
 
             // Sử dụng Path để xử lý đường dẫn một cách nhất quán
-            var relativePath = fullPath.Replace("wwwroot" + Path.DirectorySeparatorChar, "").Replace(Path.DirectorySeparatorChar, '/');
-            return $"/{relativePath}";
+            var relativePath = fullPath.Replace("wwwroot", "").Replace("\\", "/");
+            return relativePath.StartsWith("/") ? relativePath : "/" + relativePath;
+        }
+
+        public FileStream GetLogoFileStream(string logoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(logoUrl))
+                throw new ArgumentException("Logo URL is empty.");
+
+            // Bỏ dấu '/' đầu tiên nếu có
+            var relativePath = logoUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+
+            // Xác định loại file: .png hoặc .svg
+            var extension = Path.GetExtension(relativePath).ToLower();
+
+            string fullPath = extension switch
+            {
+                ".png" => Path.Combine(_logoPngsFolder, Path.GetFileName(relativePath)),
+                ".svg" => Path.Combine(_logoSvgsFolder, Path.GetFileName(relativePath)),
+                _ => throw new InvalidOperationException("Unsupported logo file type.")
+            };
+
+            if (!System.IO.File.Exists(fullPath))
+                throw new FileNotFoundException("Logo file not found.", fullPath);
+
+            return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
         }
 
         // GET: Lấy danh sách tất cả Partner

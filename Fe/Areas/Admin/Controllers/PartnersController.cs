@@ -22,6 +22,27 @@ namespace Fe.Areas.Admin.Controllers
             ModelState.Remove("ContractFile");
         }
 
+        [HttpGet("Admin/Partners/Logo")]
+        public IActionResult GetLogo(string logoUrl)
+        {
+            try
+            {
+                var stream = _partnerService.GetLogoFileStream(logoUrl); // gọi hàm từ service
+                var contentType = Path.GetExtension(logoUrl).ToLower() switch
+                {
+                    ".png" => "image/png",
+                    ".svg" => "image/svg+xml",
+                    _ => "application/octet-stream"
+                };
+
+                return File(stream, contentType);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
         // GET: /Admin/Partners
         public async Task<IActionResult> List()
         {
