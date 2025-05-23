@@ -43,6 +43,31 @@ namespace Fe.Areas.Admin.Controllers
             }
         }
 
+        [HttpGet("Admin/Partners/Contract")]
+        public IActionResult GetContract(string fileUrl)
+        {
+            try
+            {
+                var stream = _partnerService.GetContractFileStream(fileUrl);
+                var contentType = Path.GetExtension(fileUrl).ToLower() switch
+                {
+                    ".pdf" => "application/pdf",
+                    ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    _ => "application/octet-stream"
+                };
+
+                return File(stream, contentType);
+            }
+            catch (FileNotFoundException)
+            {
+                return NotFound("File not found.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         // GET: /Admin/Partners
         public async Task<IActionResult> List()
         {

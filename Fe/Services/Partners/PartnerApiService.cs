@@ -30,9 +30,13 @@ namespace Fe.Services.Partners
         {
             var extension = Path.GetExtension(originalFileName);
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
-            var timestamp = DateTime.Now.ToString("HH_mm_dd_MM_yy");
+
+            var now = DateTime.Now;
+            var timestamp = $"{now:yyMMdd_HHmmss}"; 
+
             return $"{fileNameWithoutExt}_{timestamp}{extension}";
         }
+
 
         private async Task<string> SaveLogoFileAsync(IFormFile file)
         {
@@ -112,6 +116,57 @@ namespace Fe.Services.Partners
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
         }
 
+        public FileStream GetContractFileStream(string contractFileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(contractFileUrl))
+                throw new ArgumentException("Contract file URL is empty.");
+
+            // Bỏ dấu '/' đầu nếu có và chuẩn hóa đường dẫn
+            var relativePath = contractFileUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+
+            // Lấy phần mở rộng để xác định loại file
+            var extension = Path.GetExtension(relativePath).ToLower();
+
+            string fullPath = extension switch
+            {
+                ".pdf" => Path.Combine(_filePdfFolder, Path.GetFileName(relativePath)),
+                ".docx" => Path.Combine(_fileDocxFolder, Path.GetFileName(relativePath)),
+                _ => throw new InvalidOperationException("Unsupported contract file type.")
+            };
+
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException("Contract file not found.", fullPath);
+
+            return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+        }
+
+        private void DeleteFileAll(string logoUrl, string contractFileUrl)
+        {
+            void DeleteFile(string url)
+            {
+                if (string.IsNullOrWhiteSpace(url)) return;
+
+                // Chuẩn hoá đường dẫn tuyệt đối từ wwwroot
+                var relativePath = url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                var fullPath = Path.Combine("wwwroot", relativePath);
+
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        File.Delete(fullPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new HttpRequestException(ex.Message);
+                    }
+                }
+            }
+
+            DeleteFile(logoUrl);
+            DeleteFile(contractFileUrl);
+        }
+
         // GET: Lấy danh sách tất cả Partner
         public async Task<IEnumerable<PartnerDto>> GetAllAsync()
         {
@@ -155,18 +210,28 @@ namespace Fe.Services.Partners
         // PUT: Cập nhật Partner
         public async Task EditAsync(UpdatePartnerDto dto, IFormFile logo, IFormFile contract)
         {
-            // Nếu có file mới thì xử lý thay thế
+            // Lấy thông tin Partner hiện tại để biết file cũ
+            var oldPartner = await GetByIdAsync(dto.PartnerId);
+
+            string oldLogoUrl = oldPartner.LogoUrl;
+            string oldContractFile = oldPartner.ContractFile;
+
+            // Nếu có file logo mới
             if (logo != null && logo.Length > 0)
             {
                 dto.LogoUrl = await SaveLogoFileAsync(logo);
+                // Xoá logo cũ sau khi lưu mới thành công
+                DeleteFileAll(oldLogoUrl, null);
             }
 
+            // Nếu có file hợp đồng mới
             if (contract != null && contract.Length > 0)
             {
                 dto.ContractFile = await SaveContractFileAsync(contract);
+                // Xoá contract cũ sau khi lưu mới thành công
+                DeleteFileAll(null, oldContractFile);
             }
 
-            // Gửi DTO đã cập nhật đường dẫn file sang BE
             var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync($"{_baseUrl}/api/partner", content);
 
@@ -180,6 +245,9 @@ namespace Fe.Services.Partners
         // DELETE: Xoá Partner theo ID
         public async Task DeleteAsync(int id)
         {
+            // Lấy thông tin Partner trước khi xoá để lấy đường dẫn file
+            var partner = await GetByIdAsync(id); // Gọi lại API để lấy LogoUrl & ContractFile
+
             var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/partner/{id}");
 
             if (!response.IsSuccessStatusCode)
@@ -187,6 +255,10 @@ namespace Fe.Services.Partners
                 var errorMessage = await response.Content.ReadAsStringAsync();
                 throw new HttpRequestException(errorMessage);
             }
+
+            // Nếu xoá thành công → xoá file vật lý
+            DeleteFileAll(partner.LogoUrl, partner.ContractFile);
         }
+
     }
 }
