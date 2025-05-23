@@ -7,11 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\images\" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <Folder Include="wwwroot\files\docxs\" />
+    <Folder Include="wwwroot\files\pdfs\" />
+    <Folder Include="wwwroot\images\logos\pngs\" />
+    <Folder Include="wwwroot\images\logos\svgs\" />
   </ItemGroup>
 
 </Project>

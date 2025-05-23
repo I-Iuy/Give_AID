@@ -1,0 +1,10 @@
+﻿namespace Fe.DTOs.Partners
+{
+    public class CreatePartnerDto
+    {
+        public string Name { get; set; }
+        public string LogoUrl { get; set; }
+        public string ContractFile { get; set; }
+        public int AccountId { get; set; }
+    }
+}

@@ -1,4 +1,5 @@
-﻿@{
+﻿@model Fe.DTOs.Partners.CreatePartnerDto
+@{
     ViewData["Title"] = "Add Partner";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
@@ -13,20 +14,23 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <form enctype="multipart/form-data">
+            <form asp-action="Add" method="post" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label class="form-label">Partner Name</label>
-                    <input type="text" name="Name" class="form-control" />
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Upload Logo</label>
-                    <input type="file" name="Logo" class="form-control" />
+                    <input name="logo" type="file" class="form-control" accept=".png,.svg" />
+                    <span asp-validation-for="LogoUrl" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Upload Contract</label>
-                    <input type="file" name="Contract" class="form-control" />
+                    <label class="form-label">Upload File</label>
+                    <input name="contract" type="file" class="form-control" accept=".pdf,.docx" />
+                    <span asp-validation-for="ContractFile" class="text-danger"></span>
                 </div>
 
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>

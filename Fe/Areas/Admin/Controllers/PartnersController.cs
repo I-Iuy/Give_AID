@@ -1,55 +1,188 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Fe.DTOs.Partners;
+using Fe.Services.Partners;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace Fe.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class PartnersController : Controller
     {
-        public class PartnerModel
+        private readonly IPartnerApiService _partnerService;
+
+        public PartnersController(IPartnerApiService partnerService)
         {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public string LogoUrl { get; set; }
-            public string ContractFile { get; set; }
+            _partnerService = partnerService;
         }
 
-        private static readonly List<PartnerModel> SamplePartners = new List<PartnerModel>
+        private void RemoveFileFieldsFromModelState()
         {
-            new PartnerModel
-            {
-                Id = 1,
-                Name = "Red Cross",
-                LogoUrl =  "/images/img.png",
-                ContractFile = "contract_redcross.pdf"
-            },
-            new PartnerModel
-            {
-                Id = 2,
-                Name = "UNICEF",
-                LogoUrl =  "/images/img.png",
-                ContractFile = "contract_unicef.pdf"
-            }
-        };
-
-        public IActionResult List()
-        {
-            return View(SamplePartners);
+            ModelState.Remove("LogoUrl");
+            ModelState.Remove("ContractFile");
         }
 
+        // GET: /Admin/Partners
+        public async Task<IActionResult> List()
+        {
+            var partners = await _partnerService.GetAllAsync(); // Lấy danh sách partner từ API
+            return View(partners);
+        }
+
+        // GET: /Admin/Partners/Add
         public IActionResult Add()
         {
             return View();
         }
 
-        public IActionResult Edit(int id)
+        // POST: /Admin/Partners/Add
+        [HttpPost]
+        public async Task<IActionResult> Add(CreatePartnerDto dto, IFormFile logo, IFormFile contract)
         {
-            var partner = SamplePartners.FirstOrDefault(p => p.Id == id);
+            RemoveFileFieldsFromModelState();
+
+            // Kiểm tra logo
+            if (logo == null || logo.Length == 0)
+            {
+                ModelState.AddModelError(nameof(dto.LogoUrl), "File field is required.");
+            }
+            else
+            {
+                var ext = Path.GetExtension(logo.FileName).ToLower();
+                if (ext != ".png" && ext != ".svg")
+                    ModelState.AddModelError(nameof(dto.LogoUrl), "Logo must be a .png or .svg file.");
+
+                if (logo.Length > 500 * 1024)
+                    ModelState.AddModelError(nameof(dto.LogoUrl), "Logo must be smaller than 500KB.");
+            }
+
+            // Kiểm tra file hợp đồng
+            if (contract == null || contract.Length == 0)
+            {
+                ModelState.AddModelError(nameof(dto.ContractFile), "File field is required.");
+            }
+            else
+            {
+                var ext = Path.GetExtension(contract.FileName).ToLower();
+                if (ext != ".pdf" && ext != ".docx")
+                    ModelState.AddModelError(nameof(dto.ContractFile), "Contract must be a .pdf or .docx file.");
+
+                if (contract.Length > 5 * 1024 * 1024)
+                    ModelState.AddModelError(nameof(dto.ContractFile), "Contract must be smaller than 5MB.");
+            }
+
+            if (!ModelState.IsValid)
+                return View(dto);
+
+            try
+            {
+                // Truyền IFormFile trực tiếp vào service
+                await _partnerService.AddAsync(dto, logo, contract);
+                return RedirectToAction("List");
+            }
+            catch (HttpRequestException ex)
+            {
+                var errorMessage = ex.Message;
+
+                if (errorMessage.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(dto.Name), "This name already exists.");
+                else if (errorMessage.Contains("must not be empty", StringComparison.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(dto.Name), "Name is required.");
+                else
+                    ModelState.AddModelError(string.Empty, errorMessage);
+
+                return View(dto);
+            }
+        }
+
+
+
+        // GET: /Admin/Partners/Edit/{id}
+        public async Task<IActionResult> Edit(int id)
+        {
+            var partner = await _partnerService.GetByIdAsync(id); 
+
             if (partner == null)
                 return NotFound();
 
-            return View(partner);
+            var dto = new UpdatePartnerDto
+            {
+                PartnerId = partner.PartnerId,
+                Name = partner.Name,
+                LogoUrl = partner.LogoUrl,
+                ContractFile = partner.ContractFile,
+                AccountId = partner.AccountId
+            };
+
+            return View(dto); 
+        }
+        [HttpPost]
+        public async Task<IActionResult> Edit(UpdatePartnerDto dto, IFormFile logo, IFormFile contract)
+        {
+            RemoveFileFieldsFromModelState();
+
+            bool hasFileErrors = false;
+            if (logo != null && logo.Length > 0)
+            {
+                var ext = Path.GetExtension(logo.FileName).ToLower();
+                if (ext != ".png" && ext != ".svg")
+                {
+                    ModelState.AddModelError(nameof(dto.LogoUrl), "Logo must be a .png or .svg file.");
+                    hasFileErrors = true;
+                }
+                if (logo.Length > 500 * 1024)
+                {
+                    ModelState.AddModelError(nameof(dto.LogoUrl), "Logo must be smaller than 500KB.");
+                    hasFileErrors = true;
+                }
+            }
+
+            if (contract != null && contract.Length > 0)
+            {
+                var ext = Path.GetExtension(contract.FileName).ToLower();
+                if (ext != ".pdf" && ext != ".docx")
+                {
+                    ModelState.AddModelError(nameof(dto.ContractFile), "Contract must be a .pdf or .docx file.");
+                    hasFileErrors = true;
+                }
+                if (contract.Length > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError(nameof(dto.ContractFile), "Contract must be smaller than 5MB.");
+                    hasFileErrors = true;
+                }
+            }
+
+            // Nếu có lỗi file, trả về view ngay
+            if (hasFileErrors)
+                return View(dto);
+       
+            try
+            {
+                await _partnerService.EditAsync(dto, logo, contract);
+                return RedirectToAction("List");
+            }
+            catch (HttpRequestException ex)
+            {
+                var errorMessage = ex.Message;
+
+                if (errorMessage.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(dto.Name), "This name already exists.");
+                else if (errorMessage.Contains("must not be empty", StringComparison.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(dto.Name), "Name is required.");
+                else
+                    ModelState.AddModelError(string.Empty, errorMessage);
+
+                return View(dto);
+            }
+        }
+
+
+        // GET: /Admin/Partners/Delete/{id}
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _partnerService.DeleteAsync(id); // Gọi API để xóa partner
+            return RedirectToAction("List");
         }
     }
 }

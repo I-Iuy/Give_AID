@@ -1,4 +1,4 @@
-﻿@model Fe.Areas.Admin.Controllers.PartnersController.PartnerModel
+﻿@model Fe.DTOs.Partners.UpdatePartnerDto
 @{
     ViewData["Title"] = "Edit Partner";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -14,10 +14,18 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <form enctype="multipart/form-data">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                <input asp-for="PartnerId" type="hidden" />
+                <input asp-for="LogoUrl" type="hidden" />
+                <input asp-for="ContractFile" type="hidden" />
+                <div class="mb-3">
+                    <label class="form-label">Partner ID</label>
+                    <p class="form-control-plaintext">@Model.PartnerId</p>
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Partner Name</label>
-                    <input type="text" name="Name" class="form-control" value="@Model.Name" />
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
@@ -26,16 +34,19 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Change Logo</label>
-                    <input type="file" name="Logo" class="form-control" />
+                    <input name="logo" type="file" class="form-control" accept=".png,.svg" />
+                    <span asp-validation-for="LogoUrl" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Current Contract</label><br />
+
                     <a href="@Model.ContractFile" class="btn btn-info btn-sm text-white" target="_blank"><i class="fas fa-eye"></i> View</a>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Change Contract</label>
-                    <input type="file" name="Contract" class="form-control" />
+                    <input name="contract" type="file" class="form-control" accept=".pdf,.docx" />
+                    <span asp-validation-for="ContractFile" class="text-danger"></span>
                 </div>
 
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
