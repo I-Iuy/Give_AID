@@ -9,7 +9,9 @@ namespace Be.Models
             : base(options)
         {
         }
-
+        // Migration: Add-Migration Init
         public DbSet<Purpose> Purposes { get; set; }
+        // Migration: Add-Migration Int1
+        public DbSet<Partner> Partners { get; set; }
     }
 }
