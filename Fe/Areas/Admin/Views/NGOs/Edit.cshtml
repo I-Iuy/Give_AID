@@ -1,4 +1,5 @@
-﻿@model Fe.Areas.Admin.Controllers.NGOsController.NGOModel
+﻿@model Fe.Dtos.Ngos.UpdateNgoDto
+
 @{
     ViewData["Title"] = "Edit NGO";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -14,20 +15,36 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <form>
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="NgoId" />
+
                 <div class="mb-3">
-                    <label class="form-label">NGO Name</label>
-                    <input type="text" class="form-control" value="@Model.Name" />
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label">Logo Upload</label>
-                    <input type="file" class="form-control" />
+                    <label class="form-label">Current Logo</label><br />
+                    <img src="@Model.LogoUrl" alt="Logo" style="height: 50px;" />
+                    <input type="hidden" asp-for="LogoUrl" />
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label">Website URL</label>
-                    <input type="url" class="form-control" value="@Model.WebsiteUrl" />
+                    <label class="form-label">Change Logo</label>
+                    <input name="logo" type="file" class="form-control" accept=".png,.svg" />
+                    <span asp-validation-for="LogoUrl" class="text-danger"></span>
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+
+                <div class="mb-3">
+                    <label asp-for="WebsiteUrl" class="form-label"></label>
+                    <input asp-for="WebsiteUrl" class="form-control" />
+                    <span asp-validation-for="WebsiteUrl" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save
+                </button>
                 <button type="reset" class="btn btn-secondary">Cancel</button>
             </form>
         </div>

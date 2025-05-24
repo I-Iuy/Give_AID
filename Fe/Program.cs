@@ -1,4 +1,5 @@
-﻿using Fe.Services.Partners;
+﻿using Fe.Services.Ngos;
+using Fe.Services.Partners;
 using Fe.Services.Purposes;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,8 @@ builder.Services.AddHttpClient("API", client =>
 builder.Services.AddScoped<IPurposeApiService, PurposeApiService>();
 // Đăng ký Partner
 builder.Services.AddScoped<IPartnerApiService, PartnerApiService>();
+// Đăng ký Ngo
+builder.Services.AddScoped<INgoApiService, NgoApiService>();
 var app = builder.Build();
 // Middleware xử lý HTTPS và file tĩnh (CSS, JS, ảnh, ...)
 app.UseHttpsRedirection();

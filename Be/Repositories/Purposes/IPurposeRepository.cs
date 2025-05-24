@@ -1,6 +1,4 @@
 ﻿using Be.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Be.Repositories.Purposes
 {

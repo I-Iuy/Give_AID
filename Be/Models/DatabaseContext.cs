@@ -11,7 +11,9 @@ namespace Be.Models
         }
         // Migration: Add-Migration Init
         public DbSet<Purpose> Purposes { get; set; }
-        // Migration: Add-Migration Int1
+        // Migration: Add-Migration Init1
         public DbSet<Partner> Partners { get; set; }
+        // Migration: Add-Migration Init2
+        public DbSet<Ngo> Ngos { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿@model List<Fe.Areas.Admin.Controllers.NGOsController.NGOModel>
+﻿@model List<Fe.Dtos.Ngos.NgoDto>
 @{
     ViewData["Title"] = "NGOs";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -33,12 +33,14 @@
                         <tr>
                             <td>@ngo.Name</td>
                             <td><img src="@ngo.LogoUrl" alt="Logo" style="height: 40px;" /></td>
-                            <td><a href="@ngo.WebsiteUrl" class="btn btn-info btn-sm text-white" target="_blank"><i class="fas fa-link"></i> Visit</a></td>
+                            <td><a href="@ngo.WebsiteUrl" class="btn btn-info btn-sm text-white" target="_blank" ><i class="fas fa-link"></i> Visit</a></td>
                             <td>
-                                <a asp-action="Edit" asp-route-id="@ngo.Id" class="btn btn-sm btn-warning text-white">
+                                <a asp-action="Edit" asp-route-id="@ngo.NgoId" class="btn btn-sm btn-warning text-white">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <a href="#" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</a>
+                                <a asp-action="Delete" asp-route-id="@ngo.NgoId" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this ngo?');">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
                             </td>
                         </tr>
                     }
