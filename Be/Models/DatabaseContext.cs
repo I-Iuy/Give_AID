@@ -15,5 +15,21 @@ namespace Be.Models
         public DbSet<Partner> Partners { get; set; }
         // Migration: Add-Migration Init2
         public DbSet<Ngo> Ngos { get; set; }
+        // Migration: Add-Migration Init3
+        public DbSet<Campaign> Campaigns { get; set; }
+        public DbSet<CampaignPartner> CampaignPartners { get; set; }
+        public DbSet<CampaignNgo> CampaignNgos { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Khóa chính tổng hợp cho bảng phụ
+            modelBuilder.Entity<CampaignPartner>()
+                .HasKey(pp => new { pp.CampaignId, pp.PartnerId });
+
+            modelBuilder.Entity<CampaignNgo>()
+                .HasKey(pn => new { pn.CampaignId, pn.NgoId });
+
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }
