@@ -13,7 +13,7 @@ namespace Fe.Services.Ngos
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
         private readonly string _logoPngsFolder = "wwwroot/images/logos/pngs";
-        private readonly string _logoSvgsFolder = "wwwroot/files/logos/svgs";
+        private readonly string _logoSvgsFolder = "wwwroot/images/logos/svgs";
         public NgoApiService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;

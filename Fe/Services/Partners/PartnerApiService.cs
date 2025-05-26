@@ -16,7 +16,7 @@ namespace Fe.Services.Partners
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
         private readonly string _logoPngsFolder = "wwwroot/images/logos/pngs";
-        private readonly string _logoSvgsFolder = "wwwroot/files/logos/svgs";
+        private readonly string _logoSvgsFolder = "wwwroot/images/logos/svgs";
         private readonly string _fileDocxFolder = "wwwroot/files/docxs";
         private readonly string _filePdfFolder = "wwwroot/files/pdfs";
 
