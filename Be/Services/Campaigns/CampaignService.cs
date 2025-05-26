@@ -39,24 +39,24 @@ namespace Be.Services.Campaigns
             var purpose = await _context.Purposes
                 .FirstOrDefaultAsync(p => p.PurposeId == c.PurposeId);
 
-            var ngoIds = await _context.CampaignNgos
-                .Where(x => x.CampaignId == id)
-                .Select(x => x.NgoId)
-                .ToListAsync();
-
             var partnerIds = await _context.CampaignPartners
                 .Where(x => x.CampaignId == id)
                 .Select(x => x.PartnerId)
                 .ToListAsync();
 
-            var ngoNames = await _context.Ngos
-                .Where(n => ngoIds.Contains(n.NgoId))
-                .Select(n => n.Name)
+            var ngoIds = await _context.CampaignNgos
+                .Where(x => x.CampaignId == id)
+                .Select(x => x.NgoId)
                 .ToListAsync();
 
             var partnerNames = await _context.Partners
                 .Where(p => partnerIds.Contains(p.PartnerId))
                 .Select(p => p.Name)
+                .ToListAsync();
+
+            var ngoNames = await _context.Ngos
+                .Where(n => ngoIds.Contains(n.NgoId))
+                .Select(n => n.Name)
                 .ToListAsync();
 
             return new CampaignDto
