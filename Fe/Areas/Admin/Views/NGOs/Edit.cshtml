@@ -17,7 +17,11 @@
         <div class="card-body">
             <form asp-action="Edit" method="post" enctype="multipart/form-data">
                 <input type="hidden" asp-for="NgoId" />
-
+                <input type="hidden" asp-for="LogoUrl" />
+                <div class="mb-3">
+                    <label class="form-label">Ngo ID</label>
+                    <p class="form-control-plaintext">@Model.NgoId</p>
+                </div>
                 <div class="mb-3">
                     <label asp-for="Name" class="form-label"></label>
                     <input asp-for="Name" class="form-control" />
@@ -27,7 +31,6 @@
                 <div class="mb-3">
                     <label class="form-label">Current Logo</label><br />
                     <img src="@Model.LogoUrl" alt="Logo" style="height: 50px;" />
-                    <input type="hidden" asp-for="LogoUrl" />
                 </div>
 
                 <div class="mb-3">
