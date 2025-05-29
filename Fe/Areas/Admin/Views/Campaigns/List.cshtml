@@ -41,7 +41,7 @@
                         <tr>
                             <td>@item.Title</td>
                             <td>@item.PurposeTitle</td>
-                            <td>@item.EventDate.ToString("dd/MM/yyyy")</td>
+                            <td>@item.EventDate.ToString("HH:mm dd/MM/yyyy")</td>
                             <td>
                                 <a asp-area="Admin" asp-controller="Campaigns" asp-action="Edit" asp-route-id="@item.CampaignId"
                                    class="btn btn-sm btn-warning text-white">

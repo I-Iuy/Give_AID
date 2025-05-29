@@ -13,6 +13,7 @@
   <ItemGroup>
     <Folder Include="wwwroot\files\docxs\" />
     <Folder Include="wwwroot\files\pdfs\" />
+    <Folder Include="wwwroot\images\cmpcontents\pngs\" />
     <Folder Include="wwwroot\images\logos\pngs\" />
     <Folder Include="wwwroot\images\logos\svgs\" />
   </ItemGroup>

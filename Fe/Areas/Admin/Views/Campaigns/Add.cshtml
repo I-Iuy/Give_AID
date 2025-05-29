@@ -21,18 +21,15 @@
                 <div class="mb-3">
                     <label class="form-label">Campaign Title</label>
                     <input type="text" class="form-control" name="Title" />
-                    <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Description</label>
                     <div id="quillEditor" style="height: 200px;"></div>
                     <input type="hidden" name="Content" id="descriptionInput" />
-                    <span asp-validation-for="Content" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Video URL</label>
                     <input asp-for="VideoUrl" class="form-control" />
-                    <span asp-validation-for="VideoUrl" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Select Purpose</label>
@@ -48,7 +45,6 @@
                                     <select asp-for="PurposeId" asp-items="@(ViewBag.Purposes as List<SelectListItem>)" class="form-select">
                                         <option disabled selected value="">-- Choose Purpose --</option>
                                     </select>
-                                    <span asp-validation-for="PurposeId" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>

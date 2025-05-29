@@ -112,9 +112,8 @@ namespace Fe.Services.Campaigns
 
             foreach (Match match in imgSrcRegex.Matches(contentHtml))
             {
-                var url = match.Groups["src"].Value; // e.g., /images/cmpcontents/pngs/image_240529_103212.png
+                var url = match.Groups["src"].Value; 
 
-                // ✅ Chuẩn hóa thành đường dẫn tuyệt đối từ wwwroot
                 var relativePath = url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var fullPath = Path.Combine("wwwroot", relativePath);
 
@@ -155,6 +154,7 @@ namespace Fe.Services.Campaigns
         public async Task AddAsync(CreateCampaignDto dto)
         {
             dto.Content = await SaveImgContent(dto.Content);
+            dto.EventDate = DateTime.Now;
             var json = JsonConvert.SerializeObject(dto);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync($"{_baseUrl}/api/campaign", content);
