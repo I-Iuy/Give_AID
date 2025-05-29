@@ -1,0 +1,121 @@
+﻿@model Fe.DTOs.Campaigns.CreateCampaignDto
+@{
+    ViewData["Title"] = "Add Campaign";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Campaign</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Campaigns" asp-action="List">Campaigns</a>
+        </li>
+        <li class="breadcrumb-item active">Add</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="campaignForm" asp-action="Add" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Campaign Title</label>
+                    <input type="text" class="form-control" name="Title" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <div id="quillEditor" style="height: 200px;"></div>
+                    <input type="hidden" name="Content" id="descriptionInput" />
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Video URL</label>
+                    <input asp-for="VideoUrl" class="form-control" />
+                    <span asp-validation-for="VideoUrl" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Select Purpose</label>
+                    <div class="accordion" id="purposeAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingPurpose">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePurpose" aria-expanded="false" aria-controls="collapsePurpose">
+                                    All Purposes
+                                </button>
+                            </h2>
+                            <div id="collapsePurpose" class="accordion-collapse collapse" aria-labelledby="headingPurpose" data-bs-parent="#purposeAccordion">
+                                <div class="accordion-body">
+                                    <select asp-for="PurposeId" asp-items="@(ViewBag.Purposes as List<SelectListItem>)" class="form-select">
+                                        <option disabled selected value="">-- Choose Purpose --</option>
+                                    </select>
+                                    <span asp-validation-for="PurposeId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#campaignFilterModal">
+                        <i class="fas fa-filter"></i> Select Partners and NGOs
+                    </button>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="Notify" id="notifyCheckbox">
+                    <label class="form-check-label" for="notifyCheckbox">
+                        Notify interested users
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                <button type="reset" class="btn btn-secondary">Cancel</button>
+                @Html.Partial("FilterPartial")
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var quill = new Quill('#quillEditor', {
+            theme: 'snow',
+            placeholder: 'Write your content here...',
+            modules: {
+                toolbar: [
+                    ['image'],
+                    [{ header: [1, 2, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['clean']
+                ]
+            }
+        });
+    document.getElementById('campaignForm').addEventListener('submit', function () {
+        document.getElementById('descriptionInput').value = quill.root.innerHTML;
+    });
+    });
+</script>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const partnerSearch = document.getElementById('partnerSearch');
+            if (partnerSearch) {
+                partnerSearch.addEventListener('input', function () {
+                    const keyword = this.value.toLowerCase();
+                    document.querySelectorAll('#partnerList .form-check').forEach(item => {
+                        const label = item.textContent.toLowerCase();
+                        item.style.display = label.includes(keyword) ? 'block' : 'none';
+                    });
+                });
+            }
+
+            const ngoSearch = document.getElementById('ngoSearch');
+            if (ngoSearch) {
+                ngoSearch.addEventListener('input', function () {
+                    const keyword = this.value.toLowerCase();
+                    document.querySelectorAll('#ngoList .form-check').forEach(item => {
+                        const label = item.textContent.toLowerCase();
+                        item.style.display = label.includes(keyword) ? 'block' : 'none';
+                    });
+                });
+            }
+        });
+    </script>
+}
