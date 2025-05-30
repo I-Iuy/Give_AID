@@ -10,7 +10,7 @@ namespace Fe.Services.Campaigns
         Task<IEnumerable<CampaignDto>> GetAllAsync();
         Task<CampaignDto> GetByIdAsync(int id);
         Task AddAsync(CreateCampaignDto dto);
-        //Task EditAsync(UpdateCampaignDto dto);
-        //Task DeleteAsync(int id);
+        Task EditAsync(UpdateCampaignDto dto);
+        Task DeleteAsync(int id);
     }
 }

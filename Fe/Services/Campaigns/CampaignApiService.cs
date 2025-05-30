@@ -11,8 +11,7 @@ namespace Fe.Services.Campaigns
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
-        private readonly string _cmpPngsFolder = "wwwroot/images/cmpcontents/pngs";
-        private readonly string _cmpSvgsFolder = "wwwroot/images/cmpcontents/svgs";
+        private readonly string _cmpImgFolder = "wwwroot/images/cmpcontents";
         public CampaignApiService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
@@ -29,27 +28,21 @@ namespace Fe.Services.Campaigns
             return $"{fileNameWithoutExt}_{timestamp}{extension}";
         }
         // Xử lý lọc Content -> lấy hình ảnh từ nội dung HTML của Campaign
-        private List<(byte[] Data, string Extension)> ExtractImagesFromContent(ref string htmlContent)
+        private List<(byte[] Data, string Extension, string FileName)> ExtractImagesFromContent(ref string htmlContent)
         {
-            var result = new List<(byte[] Data, string Extension)>();
+            var result = new List<(byte[], string, string)>();
 
             var imgRegex = new Regex("<img[^>]+src=[\"']data:image/(?<ext>[^;]+);base64,(?<data>[^\"']+)[\"'][^>]*>", RegexOptions.IgnoreCase);
             htmlContent = imgRegex.Replace(htmlContent, match =>
             {
-                var ext = match.Groups["ext"].Value.ToLower(); 
+                var ext = match.Groups["ext"].Value.ToLower();
                 var base64Data = match.Groups["data"].Value;
                 byte[] bytes = Convert.FromBase64String(base64Data);
 
-                result.Add((bytes, ext));
-
                 string newFileName = GenerateFileName($"image.{ext}");
-                string relativePath = ext switch
-                {
-                    "png" => $"/images/cmpcontents/pngs/{newFileName}",
-                    "svg" => $"/images/cmpcontents/svgs/{newFileName}",
-                    _ => throw new InvalidOperationException("Only png/svg images are supported.")
-                };
+                result.Add((bytes, ext, newFileName));
 
+                string relativePath = $"/images/cmpcontents/{newFileName}";
                 return $"<img src=\"{relativePath}\" />";
             });
 
@@ -60,47 +53,17 @@ namespace Fe.Services.Campaigns
         {
             if (string.IsNullOrWhiteSpace(contentHtml)) return null;
 
-            // Extract và lấy danh sách ảnh từ Content
             var imageList = ExtractImagesFromContent(ref contentHtml);
 
-            foreach (var (data, ext) in imageList)
+            Directory.CreateDirectory(_cmpImgFolder);
+
+            foreach (var (data, ext, fileName) in imageList)
             {
-                string fileName = GenerateFileName($"image.{ext}");
-                string folder = ext switch
-                {
-                    "png" => _cmpPngsFolder,
-                    "svg" => _cmpSvgsFolder,
-                    _ => throw new InvalidOperationException("Unsupported image format.")
-                };
-
-                Directory.CreateDirectory(folder);
-                var fullPath = Path.Combine(folder, fileName);
-
+                string fullPath = Path.Combine(_cmpImgFolder, fileName);
                 await File.WriteAllBytesAsync(fullPath, data);
             }
 
             return contentHtml;
-        }
-        // Lấy hình ảnh từ thư mục wwwroot/images/cmpcontents/pngs hoặc svgs
-        public FileStream GetImgContent(string imageUrl)
-        {
-            if (string.IsNullOrWhiteSpace(imageUrl))
-                throw new ArgumentException("Image URL is empty.");
-
-            var relativePath = imageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-            var extension = Path.GetExtension(relativePath).ToLower();
-
-            string fullPath = extension switch
-            {
-                ".png" => Path.Combine(_cmpPngsFolder, Path.GetFileName(relativePath)),
-                ".svg" => Path.Combine(_cmpSvgsFolder, Path.GetFileName(relativePath)),
-                _ => throw new InvalidOperationException("Unsupported image file type.")
-            };
-
-            if (!File.Exists(fullPath))
-                throw new FileNotFoundException("Image not found.", fullPath);
-
-            return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
         }
         // Xóa hình ảnh từ thư mục wwwwroot/images/cmpcontents/pngs hoặc svgs 
         public void DeleteImgContent(string contentHtml)
@@ -108,12 +71,11 @@ namespace Fe.Services.Campaigns
             if (string.IsNullOrWhiteSpace(contentHtml))
                 return;
 
-            var imgSrcRegex = new Regex("<img[^>]+src=[\"'](?<src>/images/cmpcontents/(?<type>pngs|svgs)/(?<filename>[^\"']+))[\"'][^>]*>", RegexOptions.IgnoreCase);
+            var imgSrcRegex = new Regex("<img[^>]+src=[\"'](?<src>/images/cmpcontents/(?<filename>[^\"']+))[\"'][^>]*>", RegexOptions.IgnoreCase);
 
             foreach (Match match in imgSrcRegex.Matches(contentHtml))
             {
-                var url = match.Groups["src"].Value; 
-
+                var url = match.Groups["src"].Value;
                 var relativePath = url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var fullPath = Path.Combine("wwwroot", relativePath);
 
@@ -125,7 +87,7 @@ namespace Fe.Services.Campaigns
                     }
                     catch (Exception ex)
                     {
-                        throw new IOException($"Lỗi khi xoá ảnh: {fullPath}. Chi tiết: {ex.Message}");
+                        throw new HttpRequestException(ex.Message);
                     }
                 }
             }
@@ -164,5 +126,47 @@ namespace Fe.Services.Campaigns
                 throw new HttpRequestException($"Error creating campaign: {error}");
             }
         }
+        public async Task EditAsync(UpdateCampaignDto dto)
+        {
+            // Lấy nội dung cũ từ API
+            var existingCampaign = await GetByIdAsync(dto.CampaignId);
+            var oldContent = existingCampaign.Content;
+
+            if (!string.Equals(oldContent?.Trim(), dto.Content?.Trim(), StringComparison.Ordinal))
+            {
+                DeleteImgContent(oldContent); // Xoá ảnh cũ trước
+                dto.Content = await SaveImgContent(dto.Content); // Rồi mới lưu ảnh mới
+            }
+
+            // Gửi yêu cầu cập nhật
+            var json = JsonConvert.SerializeObject(dto);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync($"{_baseUrl}/api/campaign", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"Error updating campaign: {error}");
+            }
+        }
+        // DELETE: Xoá Campaign theo ID
+        public async Task DeleteAsync(int id)
+        {
+            // Lấy thông tin campaign để xoá ảnh
+            var campaign = await GetByIdAsync(id);
+
+            var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/campaign/{id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage);
+            }
+
+            // Nếu xoá thành công → xoá ảnh trong nội dung
+            DeleteImgContent(campaign.Content);
+        }
+
+
     }
 }

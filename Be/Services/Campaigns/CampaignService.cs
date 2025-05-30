@@ -95,6 +95,12 @@ namespace Be.Services.Campaigns
                 throw new ArgumentException("Title must not be empty or whitespace.");
             return true;
         }
+        private bool IsContentValid(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+                throw new ArgumentException("Content must not be empty or whitespace.");
+            return true;
+        }
         private async Task<bool> IsVideoUrlValid(string url)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -137,6 +143,9 @@ namespace Be.Services.Campaigns
         }
         private async Task<bool> IsPurposeExists(int purposeId)
         {
+            if (purposeId <= 0)
+                return false;
+
             return await _context.Purposes.AnyAsync(p => p.PurposeId == purposeId);
         }
         private async Task<bool> ArePartnersValid(List<int> partnerIds)
@@ -160,6 +169,7 @@ namespace Be.Services.Campaigns
         public async Task AddAsync(CreateCampaignDto dto)
         {
             IsTitleValid(dto.Title);
+            IsContentValid(dto.Content);
             await IsVideoUrlValid(dto.VideoUrl);
             await IsTitleUnique(dto.Title);
             await IsVideoUrlUnique(dto.VideoUrl);
@@ -192,6 +202,7 @@ namespace Be.Services.Campaigns
         public async Task EditAsync(UpdateCampaignDto dto)
         {
             IsTitleValid(dto.Title);
+            IsContentValid(dto.Content);
             await IsVideoUrlValid(dto.VideoUrl);
             await IsTitleUnique(dto.Title, dto.CampaignId);
             await IsVideoUrlUnique(dto.VideoUrl, dto.CampaignId);
