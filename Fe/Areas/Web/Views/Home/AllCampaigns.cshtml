@@ -56,7 +56,13 @@
                            asp-route-returnToAll="true">
                             Find Out More
                         </a>
-
+                        <button class="btn btn-outline-secondary btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#shareModal"
+                                data-campaign-id="@item.CampaignId"
+                                data-campaign-title="@item.Title">
+                            Share
+                        </button>
                     </div>
                 </div>
             </div>
@@ -76,3 +82,5 @@
         </ul>
     </nav>
 </div>
+
+

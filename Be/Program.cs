@@ -6,8 +6,17 @@ using Be.Repositories.Purposes;
 using Be.Services.Campaigns;
 using Be.Services.Ngos;
 using Be.Services.Partners;
+using Be.Repositories.CommentRepo;
+using Be.Repositories.NotificationRepo;
+using Be.Repositories.Purposes;
+using Be.Repositories.ShareRepo;
+using Be.Services.Comment;
+using Be.Services.EmailService;
+
 using Be.Services.Purposes;
 using Microsoft.EntityFrameworkCore;
+using Be.Services.NotificationService;
+using Be.Services.ShareService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +40,24 @@ builder.Services.AddScoped<INgoService, NgoService>();
 //Đăng ký Campaign
 builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
+
+//  ĐĂNG KÝ REPOSITORIES
+
+builder.Services.AddScoped<IPurposeRepository, PurposeRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IShareRepository, ShareRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+//ĐĂNG KÝ SERVICES
+builder.Services.AddScoped<IPurposeService, PurposeService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IShareService, ShareService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+//EMAIL SERVICE
+builder.Services.AddScoped<IEmailService, EmailService>();
 var app = builder.Build();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

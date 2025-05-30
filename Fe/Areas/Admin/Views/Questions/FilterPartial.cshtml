@@ -1,4 +1,4 @@
-﻿@model Fe.Areas.Admin.Controllers.QuestionsController.QuestionModel
+﻿@model Fe.DTOs.Comment.CommentDashboardDto
 
 <div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -8,16 +8,16 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form method="post" asp-area="Admin" asp-controller="Question" asp-action="Reply" asp-route-id="@Model.CommentId">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Question from @Model?.UserName:</label>
+                        <label class="form-label fw-bold">Question from @Model?.GuestName:</label>
                         <p class="form-control-plaintext">@Model?.Content</p>
                     </div>
 
                     <div class="mb-3">
                         <label for="answerInput" class="form-label">Your Answer</label>
-                        <textarea class="form-control" id="answerInput" name="Answer" rows="5"
-                                  placeholder="Type your answer here...">@Model?.Answer</textarea>
+                        <textarea class="form-control" id="answerInput" name="replyContent" rows="5"
+                                  placeholder="Type your answer here..."></textarea>
                     </div>
 
                     <div class="d-grid">
@@ -28,17 +28,3 @@
         </div>
     </div>
 </div>
-<script>
-    const replyModal = document.getElementById('replyModal');
-    replyModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const user = button.getAttribute('data-user');
-        const content = button.getAttribute('data-content');
-        const answer = button.getAttribute('data-answer');
-
-        replyModal.querySelector('.modal-body .form-label.fw-bold').textContent = `Question from ${user}:`;
-        replyModal.querySelector('.modal-body .form-control-plaintext').textContent = content;
-        replyModal.querySelector('#answerInput').value = answer || '';
-    });
-</script>
-

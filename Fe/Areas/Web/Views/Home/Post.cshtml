@@ -3,6 +3,20 @@
 @{
     ViewData["Title"] = Model.Title;
     Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+}
+
+@using Fe.DTOs.Comment
+@{
+    var comments = ViewBag.Comments as List<CommentDto>;
 }
 
 <!-- Page content-->
@@ -13,9 +27,20 @@
             <article>
                 <!-- Post header-->
                 <header class="mb-4">
-                    <!-- Post title-->
                     <h1 class="fw-bolder mb-1">@Model.Title</h1>
-                    <ol class="breadcrumb mb-4">
+
+                    <!-- ✅ Share button here -->
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <button class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#shareModal"
+                                data-campaign-id="@Model.Id"
+                                data-campaign-title="@Model.Title">
+                            <i class="bi bi-share-fill me-1"></i> Share This Campaign
+                        </button>
+                    </div>
+
+                    <ol class="breadcrumb mb-4 mt-3">
                         <li class="breadcrumb-item">
                             <a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
@@ -27,28 +52,26 @@
                         }
                         <li class="breadcrumb-item active">@Model.Title</li>
                     </ol>
-                    <!-- Post meta content-->
                     <div class="text-muted fst-italic mb-2">Posted on January 1, 2023 by NGO Platform</div>
-                    <!-- Post category (Cause)-->
                     <a class="badge bg-danger text-decoration-none link-light" href="#">@Model.Cause</a>
                 </header>
-                <!-- Preview image figure-->
+
                 <figure class="mb-4">
                     <img class="img-fluid rounded" src="https://dummyimage.com/900x400/ced4da/6c757d.jpg" alt="Post Banner" />
                 </figure>
-                <!-- Post content-->
+
                 <section class="mb-5">
                     <p class="fs-5 mb-4">@Model.Description</p>
-                    <p class="fs-5 mb-4">The universe is large and old, and the ingredients for life as we know it are everywhere, so there's no reason to think that Earth would be unique in that regard.</p>
-                    <p class="fs-5 mb-4">If you get asteroids about a kilometer in size, those are large enough and carry enough energy into our system to disrupt transportation, communication, and the food chains.</p>
+                    <p class="fs-5 mb-4">The universe is large and old, and the ingredients for life as we know it are everywhere...</p>
+                    <p class="fs-5 mb-4">If you get asteroids about a kilometer in size...</p>
 
                     <h2 class="fw-bolder mb-4 mt-5">We Believe in Change</h2>
-                    <p class="fs-5 mb-4">Sharing knowledge, providing aid, and building sustainable systems for underserved communities is what drives our mission.</p>
-                    <p class="fs-5 mb-4">Every contribution matters — whether it’s time, money, or effort — toward building a better future for all.</p>
+                    <p class="fs-5 mb-4">Sharing knowledge, providing aid, and building sustainable systems...</p>
+                    <p class="fs-5 mb-4">Every contribution matters — whether it’s time, money, or effort...</p>
                 </section>
             </article>
-            
-            <!-- Post partners&NGOs-->
+
+            <!-- Post partners & NGOs-->
             @if ((Model.Partners?.Any() ?? false) || (Model.NGOs?.Any() ?? false))
             {
                 <section class="mb-5">
@@ -64,15 +87,13 @@
                                             @foreach (var partner in Model.Partners)
                                             {
                                                 <li class="list-group-item d-flex align-items-center">
-                                                    <img src="@partner.LogoUrl" alt="@partner.Name"
-                                                         class="rounded-circle me-3" width="32" height="32" />
+                                                    <img src="@partner.LogoUrl" alt="@partner.Name" class="rounded-circle me-3" width="32" height="32" />
                                                     <span>@partner.Name</span>
                                                 </li>
                                             }
                                         </ul>
                                     </div>
                                 }
-
                                 @if (Model.NGOs?.Any() ?? false)
                                 {
                                     <div class="col-md-6 mb-4">
@@ -81,8 +102,7 @@
                                             @foreach (var ngo in Model.NGOs)
                                             {
                                                 <li class="list-group-item d-flex align-items-center">
-                                                    <img src="@ngo.LogoUrl" alt="@ngo.Name"
-                                                         class="rounded-circle me-3" width="32" height="32" />
+                                                    <img src="@ngo.LogoUrl" alt="@ngo.Name" class="rounded-circle me-3" width="32" height="32" />
                                                     <span>@ngo.Name</span>
                                                 </li>
                                             }
@@ -95,49 +115,62 @@
                 </section>
             }
 
+            <!-- COMMENT SECTION START -->
             <section class="mb-5">
                 <div class="card bg-light">
                     <div class="card-body">
-                        <!-- Comment form-->
-                        <form class="mb-4">
-                            <textarea class="form-control mb-2" rows="3" placeholder="Join the discussion and leave a comment!"></textarea>
+                        <!-- Comment form -->
+                        <form class="mb-4" asp-area="Web" asp-controller="Comment" asp-action="Create" method="post">
+                            <input type="hidden" name="CampaignId" value="@Model.Id" />
+                            <textarea class="form-control mb-2" name="Content" rows="3" placeholder="Write your comment here..." required></textarea>
 
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="anonymousCheck" />
-                                <label class="form-check-label" for="anonymousCheck">
-                                    Post anonymously
-                                </label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="IsAnonymous" id="anonymousCheck" />
+                                <label class="form-check-label" for="anonymousCheck">Post anonymously</label>
                             </div>
+
+                            @if (!User.Identity.IsAuthenticated)
+                            {
+                                <div class="mb-2">
+                                    <input name="GuestName" class="form-control" placeholder="Your name (optional if not anonymous)">
+                                </div>
+                            }
+
+                            <button type="submit" class="btn btn-primary">Submit Comment</button>
                         </form>
 
-                        <!-- Comment with nested comments-->
-                        <div class="d-flex mb-4">
-                            <!-- Parent comment-->
-
-                            <div class="ms-3">
-                                <div class="fw-bold">UserName</div>
-                                If you're going to lead a space frontier, it has to be government; it'll never be private enterprise. Because the space frontier is dangerous, and it's expensive, and it has unquantified risks.
-                                <!-- Child comment 1-->
-                                <div class="d-flex mt-4">
-
+                        <!-- Comment list -->
+                        @if (comments != null && comments.Any())
+                        {
+                            foreach (var comment in comments)
+                            {
+                                <div class="d-flex mb-4">
                                     <div class="ms-3">
-                                        <div class="fw-bold">Admin</div>
-                                        And under those conditions, you cannot establish a capital-market evaluation of that enterprise. You can't get investors.
-                                    </div>
-                                </div>                      
-                            </div>
-                        </div>
-                        <!-- Single comment-->
-                        <div class="d-flex">
+                                        <div class="fw-bold">
+                                            @(comment.IsAnonymous ? "Anonymous" : (comment.GuestName ?? "Guest"))
+                                            <span class="text-muted small">– @comment.CommentedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                        </div>
+                                        <p>@comment.Content</p>
 
-                            <div class="ms-3">
-                                <div class="fw-bold">UserName</div>
-                                When I look at the universe and all the ways the universe wants to kill us, I find it hard to reconcile that with statements of beneficence.
-                            </div>
-                        </div>
+                                        @if (comment.IsReplied)
+                                        {
+                                            <div class="mt-2 ms-4 p-2 border rounded bg-light">
+                                                <div class="fw-bold text-primary">Admin Reply:</div>
+                                                <div class="fst-italic text-muted">This comment has been responded to by the administrator.</div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted">There are no comments for this campaign yet.</p>
+                        }
                     </div>
                 </div>
             </section>
+            <!-- COMMENT SECTION END -->
         </div>
 
         <!-- Side widgets-->
@@ -147,23 +180,35 @@
                 @Html.Partial("_UrgentProgramsWidget")
 
                 <!-- Interest Subscription Widget -->
+                <!-- Interest Subscription Widget -->
                 <div class="card mb-4">
                     <div class="card-header">Stay Informed</div>
                     <div class="card-body">
                         <p class="mb-3">Would you like to receive updates about future programs?</p>
-                        <a class="btn btn-outline-primary w-100" href="#">
-                            <i class="bi bi-bell-fill"></i> Get Notifications
-                        </a>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <form asp-area="Web" asp-controller="Notification" asp-action="Subscribe" method="post">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-bell-fill"></i> Get Notifications
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="btn btn-outline-secondary w-100" href="/Account/Login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login to Subscribe
+                            </a>
+                        }
                     </div>
                 </div>
+
 
                 <!-- Donate Widget -->
                 <div class="card mb-4">
                     <div class="card-header">Make a Difference</div>
                     <div class="card-body">
-                        <p class="mb-2">
-                            Would you like to donate to the <strong>@ViewBag.Title</strong> program?
-                        </p>
+                        <p class="mb-2">Would you like to donate to the <strong>@ViewBag.Title</strong> program?</p>
                         <a class="btn btn-outline-danger w-100"
                            data-bs-toggle="modal"
                            data-bs-target="#donationFilterModal"
@@ -175,6 +220,57 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-area="Web" asp-controller="Share" asp-action="Create">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Share Campaign</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" name="CampaignId" id="modalCampaignId" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Receiver Email</label>
+                        <input type="email" name="ReceiverEmail" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Your Name (optional)</label>
+                        <input type="text" name="GuestName" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Platform</label>
+                        <select name="Platform" class="form-select">
+                            <option>Email</option>
+                            <option>Facebook</option>
+                            <option>WhatsApp</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Share Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const shareModal = document.getElementById('shareModal');
+        shareModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const campaignId = button.getAttribute('data-campaign-id');
+            document.getElementById('modalCampaignId').value = campaignId;
+        });
+    </script>
+}

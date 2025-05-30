@@ -1,38 +1,59 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Fe.DTOs.Comment;
+using Fe.Services.Comment;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace Fe.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class QuestionsController : Controller
     {
-        public class QuestionModel
+        private readonly ICommentService _commentService;
+
+        public QuestionsController(ICommentService commentService)
         {
-            public int Id { get; set; }
-            public int ProgramId { get; set; }
-            public string UserName { get; set; }
-            public string Content { get; set; }
-            public string Answer { get; set; }
+            _commentService = commentService;
         }
 
-        private static readonly List<QuestionModel> SampleQuestions = new List<QuestionModel>
+        // GET: Admin/Question
+        public async Task<IActionResult> Index()
         {
-            new QuestionModel { Id = 1, ProgramId = 1, UserName = "Nguyen Van A", Content = "How will the funds be distributed?", Answer = "" },
-            new QuestionModel { Id = 2, ProgramId = 1, UserName = "Le Thi B", Content = "Can I donate monthly?", Answer = "Yes, monthly donations are accepted." }
-        };
-
-        public IActionResult List(int programId)
-        {
-            ViewBag.ProgramId = programId;
-            var questions = SampleQuestions.Where(q => q.ProgramId == programId).ToList();
-            return View(questions);
+            var comments = await _commentService.GetAllForDashboardAsync();
+            return View(comments);
         }
 
-        public IActionResult Reply(int id)
+        // GET: Admin/Question/Reply/{id}
+        [HttpGet]
+        public async Task<IActionResult> Reply(int id)
         {
-            var q = SampleQuestions.FirstOrDefault(x => x.Id == id);
-            return View(q);
+            var comments = await _commentService.GetAllForDashboardAsync();
+            var comment = comments?.FirstOrDefault(c => c.CommentId == id);
+            if (comment == null)
+                return NotFound();
+
+            return View(comment);
+        }
+
+        // POST: Admin/Question/Reply
+        [HttpPost]
+        public async Task<IActionResult> Reply(int id, string replyContent)
+        {
+            if (string.IsNullOrWhiteSpace(replyContent))
+            {
+                ModelState.AddModelError("", "Reply cannot be empty.");
+                return RedirectToAction("Reply", new { id });
+            }
+
+            await _commentService.ReplyAsync(id, replyContent); 
+            return RedirectToAction("Index");
+        }
+
+        // POST: Admin/Question/Delete
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _commentService.DeleteAsync(id); 
+            return RedirectToAction("Index");
         }
     }
 }

@@ -8,6 +8,8 @@ namespace Fe.Areas.Web.Controllers
     {
         public class FeatureCard
         {
+            public int Id { get; set; }
+            public int CampaignId => Id;
             public string Title { get; set; }
             public string Description { get; set; }
             public string Link { get; set; }
@@ -321,7 +323,7 @@ namespace Fe.Areas.Web.Controllers
 
         public IActionResult DonationHistory()
         {
-            return View(Cards); 
+            return View(Cards);
         }
 
         public IActionResult WhatWeDo()

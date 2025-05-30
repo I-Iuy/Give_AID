@@ -42,8 +42,25 @@
                 <div class="sb-nav-link-icon"><i class="fas fa-building"></i></div>
                 NGOs
             </a>
+            <div class="sb-sidenav-menu-heading">Questions</div>
+            <a class="nav-link" asp-area="Admin" asp-controller="Questions" asp-action="Index">
+                <div class="sb-nav-link-icon"><i class="fas fa-comments"></i></div>
+                Comments
+            </a>
+       
+        <div class="sb-sidenav-menu-heading">Notifications</div>
+
+        <a class="nav-link" asp-area="Admin" asp-controller="Notification" asp-action="Subscribers">
+            <div class="sb-nav-link-icon"><i class="fas fa-bell"></i></div>
+            Notifications
+        </a>
+
+        <a class="nav-link" asp-area="Admin" asp-controller="Notification" asp-action="History">
+            <div class="sb-nav-link-icon"><i class="fas fa-history"></i></div>
+            Notification History
+        </a>
         </div>
-    </div>
+        </div>
     <div class="sb-sidenav-footer">
         <div class="small">Logged in as:</div>
         Start Bootstrap

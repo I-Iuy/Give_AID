@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace Be.Models
 {
@@ -16,7 +15,7 @@ namespace Be.Models
         // Migration: Add-Migration Init2
         public DbSet<Ngo> Ngos { get; set; }
         // Migration: Add-Migration Init3
-        public DbSet<Campaign> Campaigns { get; set; }
+        //public DbSet<Campaign> Campaigns { get; set; }
         public DbSet<CampaignPartner> CampaignPartners { get; set; }
         public DbSet<CampaignNgo> CampaignNgos { get; set; }
 
@@ -31,5 +30,11 @@ namespace Be.Models
 
             base.OnModelCreating(modelBuilder);
         }
+        public DbSet<Account> Accounts { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; } 
+        public DbSet<Comment> Comments { get; set; }
+        public DbSet<Share> Shares { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
+
     }
 }
