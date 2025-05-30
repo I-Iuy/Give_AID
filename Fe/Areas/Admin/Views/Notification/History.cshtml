@@ -1,0 +1,52 @@
+﻿@model List<Fe.DTOs.Notification.UserNotificationDto>
+
+@{
+    ViewData["Title"] = "Notification History";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <h2 class="mb-4">All Sent Notifications</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">No notifications have been sent yet.</div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Notification ID</th>
+                    <th>Account ID</th>
+                    <th>Title</th>
+                    <th>Message</th>
+                    <th>Sent At</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.NotificationId</td>
+                        <td>@item.AccountId</td>
+                        <td>@item.Title</td>
+                        <td>@item.Message</td>
+                        <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @if (item.IsRead)
+                            {
+                                <span class="badge bg-success">Read</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Unread</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

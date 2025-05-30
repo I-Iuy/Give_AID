@@ -1,0 +1,41 @@
+﻿@model Fe.DTOs.Comment.CommentDto
+
+@{
+    ViewData["Title"] = "Reply to Question";
+    Layout = "/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Reply to Question</h2>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">
+            Sender: @(Model.IsAnonymous ? "Anonymous" : Model.GuestName ?? $"Account #{Model.AccountId}")
+        </h5>
+
+        <p><strong>Submitted At:</strong> @Model.CommentedAt.ToString("dd/MM/yyyy HH:mm")</p>
+
+        <p><strong>Question:</strong></p>
+        <div class="p-3 border bg-light mb-3">@Model.Content</div>
+
+        @if (Model.IsReplied)
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-check-circle-fill"></i>
+                This question has already been replied to.
+            </div>
+        }
+
+        <form asp-area="Admin" asp-controller="Questions" asp-action="Reply" method="post">
+            <input type="hidden" name="id" value="@Model.CommentId" />
+
+            <div class="form-group">
+                <label for="replyContent">Your Reply:</label>
+                <textarea name="replyContent" class="form-control" rows="5" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-success mt-3">Submit Reply</button>
+            <a asp-area="Admin" asp-controller="Questions" asp-action="Index" class="btn btn-secondary mt-3">Back to List</a>
+        </form>
+    </div>
+</div>

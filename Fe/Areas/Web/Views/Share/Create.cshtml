@@ -1,0 +1,40 @@
+﻿@model Fe.DTOs.Share.CreateShareDto
+
+@{
+    ViewData["Title"] = "Share Campaign";
+    Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <h2 class="mb-3">Share This Campaign</h2>
+
+    <form asp-action="Create" method="post">
+        <input type="hidden" asp-for="CampaignId" />
+
+        <div class="mb-3">
+            <label asp-for="ReceiverEmail" class="form-label"></label>
+            <input asp-for="ReceiverEmail" class="form-control" placeholder="receiver@example.com" />
+            <span asp-validation-for="ReceiverEmail" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="GuestName" class="form-label">Your Name (optional)</label>
+            <input asp-for="GuestName" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Platform" class="form-label"></label>
+            <select asp-for="Platform" class="form-select">
+                <option>Email</option>
+                <option>Facebook</option>
+                <option>WhatsApp</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Share Now</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
