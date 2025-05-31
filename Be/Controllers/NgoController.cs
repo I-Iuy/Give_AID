@@ -1,4 +1,5 @@
 ﻿using Be.Dtos.Ngos;
+using Be.Services.CampaignUsage;
 using Be.Services.Ngos;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,10 +12,11 @@ namespace Be.Controllers
     public class NgoController : ControllerBase
     {
         private readonly INgoService _service;
-
-        public NgoController(INgoService service)
+        private readonly ICampaignUsageService _usageService;
+        public NgoController(INgoService service, ICampaignUsageService usageService)
         {
             _service = service;
+            _usageService = usageService;
         }
 
         // GET: api/ngo
@@ -52,7 +54,13 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
+        // Kiểm tra Ngo có trong Campaign
+        [HttpGet("{id}/is-used")]
+        public async Task<IActionResult> IsNgoUsed(int id)
+        {
+            bool isUsed = await _usageService.IsNgoUsedAsync(id);
+            return Ok(new { isUsed });
+        }
         // PUT: api/ngo
         [HttpPut]
         public async Task<IActionResult> Edit([FromBody] UpdateNgoDto dto)

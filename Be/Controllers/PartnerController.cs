@@ -1,4 +1,5 @@
 ﻿using Be.DTOs.Partners;
+using Be.Services.CampaignUsage;
 using Be.Services.Partners;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,10 +12,12 @@ namespace Be.Controllers
     public class PartnerController : ControllerBase
     {
         private readonly IPartnerService _service;
+        private readonly ICampaignUsageService _usageService;
 
-        public PartnerController(IPartnerService service)
+        public PartnerController(IPartnerService service, ICampaignUsageService usageService)
         {
             _service = service;
+            _usageService = usageService;
         }
 
         // GET: api/partner
@@ -52,7 +55,13 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
+        // Kiểm tra Partner có trong Campaign
+        [HttpGet("{id}/is-used")]
+        public async Task<IActionResult> IsPartnerUsed(int id)
+        {
+            bool isUsed = await _usageService.IsPartnerUsedAsync(id);
+            return Ok(new { isUsed });
+        }
         // PUT: api/partner
         [HttpPut]
         public async Task<IActionResult> Edit([FromBody] UpdatePartnerDto dto)

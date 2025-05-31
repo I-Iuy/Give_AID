@@ -206,6 +206,22 @@ namespace Fe.Services.Partners
                 throw new HttpRequestException(errorMessage);
             }
         }
+        // Kiểm tra xem Partner có đang được sử dụng không
+        public async Task<bool> CheckInUseAsync(int id)
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}/api/partner/{id}/is-used");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage);
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<dynamic>(content);
+
+            return result.isUsed == true;
+        }
 
         // PUT: Cập nhật Partner
         public async Task EditAsync(UpdatePartnerDto dto, IFormFile logo, IFormFile contract)

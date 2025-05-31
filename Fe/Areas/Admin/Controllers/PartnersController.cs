@@ -142,6 +142,19 @@ namespace Fe.Areas.Admin.Controllers
         }
 
 
+        // GET: /Admin/Partners/CheckInUse/{id}
+        public async Task<IActionResult> CheckInUse(int id)
+        {
+            try
+            {
+                bool isUsed = await _partnerService.CheckInUseAsync(id);
+                return Json(new { isUsed });
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         // GET: /Admin/Partners/Edit/{id}
         public async Task<IActionResult> Edit(int id)

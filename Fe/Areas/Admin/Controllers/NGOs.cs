@@ -104,6 +104,19 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             }
         }
+        // GET: /Admin/Partners/CheckInUse/{id}
+        public async Task<IActionResult> CheckInUse(int id)
+        {
+            try
+            {
+                bool isUsed = await _ngoApiService.CheckInUseAsync(id);
+                return Json(new { isUsed });
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         // GET: /Admin/Ngos/Edit/{id}
         public async Task<IActionResult> Edit(int id)
         {

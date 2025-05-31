@@ -1,5 +1,5 @@
-﻿@model Fe.Dtos.Ngos.UpdateNgoDto
-
+﻿@using Newtonsoft.Json
+@model Fe.Dtos.Ngos.UpdateNgoDto
 @{
     ViewData["Title"] = "Edit NGO";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -15,7 +15,7 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <form id="editNgoForm" asp-action="Edit" method="post" enctype="multipart/form-data">
                 <input type="hidden" asp-for="NgoId" />
                 <input type="hidden" asp-for="LogoUrl" />
                 <div class="mb-3">
@@ -53,3 +53,45 @@
         </div>
     </div>
 </div>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("editNgoForm");
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const ngoId = @Model.NgoId;
+                const originalName = @Html.Raw(JsonConvert.SerializeObject(Model.Name));
+                const newName = document.querySelector('input[name="Name"]').value.trim();
+
+                if (newName !== originalName) {
+                    try {
+                        const response = await fetch(`/Admin/Ngos/CheckInUse/${ngoId}`, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' }
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(errorText || 'Failed to check NGO usage.');
+                        }
+
+                        const data = await response.json();
+
+                        if (data.isUsed) {
+                            const confirmed = confirm("NGO is in use. Editing the name may affect related programs!");
+                            if (!confirmed) return;
+                        }
+
+                        form.submit();
+                    } catch (error) {
+                        alert("An error occurred: " + error.message);
+                    }
+                } else {
+                    form.submit();
+                }
+            });
+        });
+    </script>
+}
