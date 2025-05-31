@@ -43,13 +43,16 @@
                             <td>@item.PurposeTitle</td>
                             <td>@item.EventDate.ToString("HH:mm dd/MM/yyyy")</td>
                             <td>
-                                <a asp-area="Admin" asp-controller="Campaigns" asp-action="Edit" asp-route-id="@item.CampaignId"
+                                <a asp-action="Edit" asp-route-id="@item.CampaignId"
                                    class="btn btn-sm btn-warning text-white">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <a href="#" class="btn btn-sm btn-danger">
+                                <a asp-action="Delete" asp-route-id="@item.CampaignId"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Are you sure you want to delete this campaign?');">
                                     <i class="fas fa-trash"></i> Delete
                                 </a>
+
                             </td>
                         </tr>
                     }

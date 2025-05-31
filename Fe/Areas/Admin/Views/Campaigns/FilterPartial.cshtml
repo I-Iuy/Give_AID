@@ -23,7 +23,12 @@
                                             @foreach (var partner in ViewBag.Partners as List<SelectListItem>)
                                             {
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="PartnerIds" value="@partner.Value" id="partner_@partner.Value" />
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="PartnerIds"
+                                                       value="@partner.Value"
+                                                       id="partner_@partner.Value"
+                                                @(Model?.PartnerIds?.Contains(int.Parse(partner.Value)) == true ? "checked" : "") />
+
                                                     <label class="form-check-label" for="partner_@partner.Value">@partner.Text</label>
                                                 </div>
                                             }
@@ -51,7 +56,11 @@
                                             @foreach (var ngo in ViewBag.NGOs as List<SelectListItem>)
                                             {
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="NgoIds" value="@ngo.Value" id="ngo_@ngo.Value" />
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="NgoIds"
+                                                       value="@ngo.Value"
+                                                       id="ngo_@ngo.Value"
+                                                @(Model?.NgoIds?.Contains(int.Parse(ngo.Value)) == true ? "checked" : "") />
                                                     <label class="form-check-label" for="ngo_@ngo.Value">@ngo.Text</label>
                                                 </div>
                                             }

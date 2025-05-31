@@ -7,13 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\images\cmpcontents\pngs\**" />
+    <Content Remove="wwwroot\images\cmpcontents\pngs\**" />
+    <EmbeddedResource Remove="wwwroot\images\cmpcontents\pngs\**" />
+    <None Remove="wwwroot\images\cmpcontents\pngs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\files\docxs\" />
     <Folder Include="wwwroot\files\pdfs\" />
-    <Folder Include="wwwroot\images\cmpcontents\pngs\" />
+    <Folder Include="wwwroot\images\cmpcontents\" />
     <Folder Include="wwwroot\images\logos\pngs\" />
     <Folder Include="wwwroot\images\logos\svgs\" />
   </ItemGroup>
