@@ -134,8 +134,27 @@ namespace Fe.Services.Campaigns
 
             if (!string.Equals(oldContent?.Trim(), dto.Content?.Trim(), StringComparison.Ordinal))
             {
-                DeleteImgContent(oldContent); // Xoá ảnh cũ trước
-                dto.Content = await SaveImgContent(dto.Content); // Rồi mới lưu ảnh mới
+                // So sánh danh sách ảnh cũ và mới bằng Regex
+                var imgRegex = new Regex("<img[^>]+src=[\"'](?<src>/images/cmpcontents/[^\"']+)[\"'][^>]*>", RegexOptions.IgnoreCase);
+
+                var oldImgs = imgRegex.Matches(oldContent ?? "")
+                                       .Select(m => m.Groups["src"].Value)
+                                       .ToList();
+
+                var newImgs = imgRegex.Matches(dto.Content ?? "")
+                                       .Select(m => m.Groups["src"].Value)
+                                       .ToList();
+
+                var removedImgs = oldImgs.Except(newImgs, StringComparer.OrdinalIgnoreCase).ToList();
+
+                // Tạo nội dung giả chỉ chứa ảnh bị xoá
+                string fakeContent = string.Join("", removedImgs.Select(src => $"<img src=\"{src}\" />"));
+
+                // Gọi lại phương thức xoá sẵn có
+                DeleteImgContent(fakeContent);
+
+                // Cuối cùng, xử lý ảnh base64 → ảnh mới
+                dto.Content = await SaveImgContent(dto.Content);
             }
 
             // Gửi yêu cầu cập nhật
@@ -149,6 +168,7 @@ namespace Fe.Services.Campaigns
                 throw new HttpRequestException($"Error updating campaign: {error}");
             }
         }
+
         // DELETE: Xoá Campaign theo ID
         public async Task DeleteAsync(int id)
         {

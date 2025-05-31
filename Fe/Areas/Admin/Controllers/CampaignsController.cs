@@ -18,39 +18,7 @@ namespace Fe.Areas.Admin.Controllers
             _campaignApiService = campaignApiService;
             _getdataApiService = getdataApiService;
         }
-        [HttpGet("Admin/Campaigns/Image")]
-        // GET: Admin/Campaigns
-        public async Task<IActionResult> List()
-        {
-            var campaigns = await _campaignApiService.GetAllAsync();
-            return View(campaigns);
-        }
-        public async Task<IActionResult> Add()
-        {
-            ViewBag.Purposes = (await _getdataApiService.GetAllPurposesAsync())
-                .Select(p => new SelectListItem
-                {
-                    Value = p.PurposeId.ToString(),
-                    Text = p.Title
-                }).ToList();
-
-            ViewBag.Partners = (await _getdataApiService.GetAllPartnersAsync())
-                .Select(p => new SelectListItem
-                {
-                    Value = p.PartnerId.ToString(),
-                    Text = p.Name
-                }).ToList();
-
-            ViewBag.NGOs = (await _getdataApiService.GetAllNgosAsync())
-                .Select(n => new SelectListItem
-                {
-                    Value = n.NgoId.ToString(),
-                    Text = n.Name
-                }).ToList();
-
-            return View();
-        }
-        // GET: Admin/Campaigns
+        // GET: Purpose =1, Partners >=1, NGOs >= 1 
         private async Task<IActionResult> ReloadCampaignView(object dto, string viewName)
         {
             ViewBag.Purposes = (await _getdataApiService.GetAllPurposesAsync())
@@ -76,6 +44,17 @@ namespace Fe.Areas.Admin.Controllers
 
             return View(viewName, dto);
         }
+        // GET: Admin/Campaigns
+        public async Task<IActionResult> List()
+        {
+            var campaigns = await _campaignApiService.GetAllAsync();
+            return View(campaigns);
+        }
+        public async Task<IActionResult> Add()
+        {
+            return await ReloadCampaignView(new CreateCampaignDto(), "Add");
+        }
+
         // POST: Admin/Campaigns/Add
         [HttpPost]
         public async Task<IActionResult> Add(CreateCampaignDto dto)
