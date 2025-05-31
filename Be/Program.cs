@@ -1,9 +1,11 @@
 ﻿using Be.Models;
 using Be.Repositories.Campaigns;
+using Be.Repositories.CampaignsUsage;
 using Be.Repositories.Ngos;
 using Be.Repositories.Partners;
 using Be.Repositories.Purposes;
 using Be.Services.Campaigns;
+using Be.Services.CampaignUsage;
 using Be.Services.Ngos;
 using Be.Services.Partners;
 using Be.Services.Purposes;
@@ -31,6 +33,9 @@ builder.Services.AddScoped<INgoService, NgoService>();
 //Đăng ký Campaign
 builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
+//Đăng ký CampaignUsage
+builder.Services.AddScoped<ICampaignUsageRepository, CampaignUsageRepository>();
+builder.Services.AddScoped<ICampaignUsageService, CampaignUsageService>();
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

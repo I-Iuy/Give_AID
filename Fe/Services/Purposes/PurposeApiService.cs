@@ -29,7 +29,15 @@ namespace Fe.Services.Purposes
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<IEnumerable<PurposeDto>>(json);
         }
+        // Lấy Purpose theo ID
+        public async Task<PurposeDto> GetByIdAsync(int id)
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}/api/purpose/{id}");
+            response.EnsureSuccessStatusCode();
 
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<PurposeDto>(json);
+        }
         // Tạo mới Purpose
         public async Task CreateAsync(CreatePurposeDto dto)
         {
@@ -42,8 +50,38 @@ namespace Fe.Services.Purposes
                 throw new HttpRequestException(errorMessage); // Ném lỗi lên Controller
             }
         }
+        // Kiểm tra xem Purpose có đang được sử dụng không
+        public async Task<bool> CheckInUseAsync(int id)
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}/api/purpose/{id}/is-used");
 
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage);
+            }
 
+            var content = await response.Content.ReadAsStringAsync();
+
+            var result = JsonConvert.DeserializeObject<dynamic>(content);
+            return result.isUsed == true; 
+        }
+        // Sửa Purpose
+        public async Task EditAsync(UpdatePurposeDto dto)
+        {
+            var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PutAsync($"{_baseUrl}/api/purpose", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    throw new InvalidOperationException(errorMessage);
+
+                throw new HttpRequestException(errorMessage);
+            }
+        }
         // Xóa Purpose theo ID
         public async Task DeleteAsync(int id)
         {
@@ -52,7 +90,10 @@ namespace Fe.Services.Purposes
             if (!response.IsSuccessStatusCode)
             {
                 var errorMessage = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException(errorMessage); // Ném lỗi lên Controller
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    throw new InvalidOperationException(errorMessage);
+                throw new HttpRequestException(errorMessage); 
             }
         }
     }

@@ -1,0 +1,85 @@
+﻿@using Newtonsoft.Json
+@model Fe.DTOs.Purposes.UpdatePurposeDto
+
+@{
+    ViewData["Title"] = "Edit Purpose";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Purpose</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Purposes" asp-action="List">Purposes</a>
+        </li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="editPurposeForm" asp-action="Edit" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="PurposeId" />
+                <div class="mb-3">
+                    <label class="form-label">Purpose ID</label>
+                    <p class="form-control-plaintext">@Model.PurposeId</p>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Title</label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <a asp-action="List" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("editPurposeForm");
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const purposeId = @Model.PurposeId;
+                const originalTitle = @Html.Raw(JsonConvert.SerializeObject(Model.Title));
+                const newTitle = document.querySelector('input[name="Title"]').value.trim();
+
+                if (newTitle !== originalTitle) {
+                    try {
+                        const response = await fetch(`/Admin/Purposes/CheckInUse/${purposeId}`, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' }
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(errorText || 'Failed to check purpose usage.');
+                        }
+
+                        const data = await response.json();
+
+                        if (data.isUsed) {
+                            const confirmed = confirm("Purpose is in use. Editing the title will affect related campaigns. Do you want to proceed?");
+                            if (!confirmed) return;
+                        }
+
+                        form.submit();
+                    } catch (error) {
+                        alert("An error occurred: " + error.message);
+                    }
+                } else {
+                    form.submit();
+                }
+            });
+        });
+    </script>
+}
