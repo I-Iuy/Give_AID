@@ -1,0 +1,72 @@
+﻿<div class="modal fade" id="campaignFilterModal" tabindex="-1" aria-labelledby="campaignFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="campaignFilterModalLabel">Select Partners and NGOs</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                    <!-- Partners Accordion -->
+                    <div class="mb-4">
+                        <label class="form-label">Partners</label>
+                        <div class="accordion" id="partnersAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingPartners">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePartners" aria-expanded="false" aria-controls="collapsePartners">
+                                        All Partners
+                                    </button>
+                                </h2>
+                                <div id="collapsePartners" class="accordion-collapse collapse" aria-labelledby="headingPartners" data-bs-parent="#partnersAccordion">
+                                    <div class="accordion-body">
+                                        <input type="text" class="form-control mb-2" id="partnerSearch" placeholder="Search partners...">
+                                        <div id="partnerList">
+                                            @foreach (var partner in ViewBag.Partners as List<SelectListItem>)
+                                            {
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="PartnerIds" value="@partner.Value" id="partner_@partner.Value" />
+                                                    <label class="form-check-label" for="partner_@partner.Value">@partner.Text</label>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NGOs Accordion -->
+                    <div class="mb-4">
+                        <label class="form-label">NGOs</label>
+                        <div class="accordion" id="ngosAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingNgos">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNgos" aria-expanded="false" aria-controls="collapseNgos">
+                                        All NGOs
+                                    </button>
+                                </h2>
+                                <div id="collapseNgos" class="accordion-collapse collapse" aria-labelledby="headingNgos" data-bs-parent="#ngosAccordion">
+                                    <div class="accordion-body">
+                                        <input type="text" class="form-control mb-2" id="ngoSearch" placeholder="Search NGOs...">
+                                        <div id="ngoList">
+                                            @foreach (var ngo in ViewBag.NGOs as List<SelectListItem>)
+                                            {
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="NgoIds" value="@ngo.Value" id="ngo_@ngo.Value" />
+                                                    <label class="form-check-label" for="ngo_@ngo.Value">@ngo.Text</label>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Apply</button>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
