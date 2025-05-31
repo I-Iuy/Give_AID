@@ -1,6 +1,7 @@
 ﻿using Be.DTOs.Partners;
 using Be.Models;
 using Be.Repositories.Partners;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,10 +11,11 @@ namespace Be.Services.Partners
     public class PartnerService : IPartnerService
     {
         private readonly IPartnerRepository _repo;
-
-        public PartnerService(IPartnerRepository repo)
+        private readonly DatabaseContext _context;
+        public PartnerService(IPartnerRepository repo, DatabaseContext context)
         {
             _repo = repo;
+            _context = context;
         }
 
         public async Task<IEnumerable<PartnerDto>> GetAllAsync()
@@ -140,6 +142,13 @@ namespace Be.Services.Partners
 
         public async Task DeleteAsync(int id)
         {
+            bool isUsed = await _context.CampaignPartners.AnyAsync(cp => cp.PartnerId == id);
+
+            if (isUsed)
+            {
+                throw new InvalidOperationException("Partner is in use. Delete related campaigns first");
+            }
+
             await _repo.DeleteAsync(id);
         }
     }

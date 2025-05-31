@@ -253,6 +253,8 @@ namespace Fe.Services.Partners
             if (!response.IsSuccessStatusCode)
             {
                 var errorMessage = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    throw new InvalidOperationException(errorMessage); 
                 throw new HttpRequestException(errorMessage);
             }
 

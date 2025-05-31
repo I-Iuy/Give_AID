@@ -227,7 +227,15 @@ namespace Fe.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            await _partnerService.DeleteAsync(id); // Gọi API để xóa partner
+            try
+            {
+                await _partnerService.DeleteAsync(id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Warning"] = ex.Message;
+            }
+
             return RedirectToAction("List");
         }
     }

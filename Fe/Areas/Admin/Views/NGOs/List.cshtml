@@ -1,4 +1,5 @@
-﻿@model List<Fe.Dtos.Ngos.NgoDto>
+﻿@using Newtonsoft.Json
+@model List<Fe.Dtos.Ngos.NgoDto>
 @{
     ViewData["Title"] = "NGOs";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -49,3 +50,17 @@
         </div>
     </div>
 </div>
+@section Scripts {
+    <script>
+        // Cảnh báo nếu có TempData Warning
+        const warning = @Html.Raw(JsonConvert.SerializeObject(TempData["Warning"]));
+        if (warning && warning.length > 0) {
+            confirm(warning); // confirm chứ không phải alert
+        }
+
+        // Hàm xử lý nút xoá
+        function handleDelete(link) {
+            return confirm("Are you sure you want to delete this NGO?");
+        }
+    </script>
+}

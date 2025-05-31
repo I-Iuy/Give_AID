@@ -87,7 +87,6 @@ namespace Be.Services.Purposes
         // Xoá Purpose theo ID
         public async Task DeleteAsync(int id)
         {
-            // Kiểm tra có campaign nào đang dùng purpose này không
             bool isUsed = _context.Campaigns.Any(c => c.PurposeId == id);
             if (isUsed)
             {

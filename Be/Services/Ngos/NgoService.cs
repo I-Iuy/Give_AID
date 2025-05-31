@@ -1,6 +1,7 @@
 ﻿using Be.Dtos.Ngos;
 using Be.Models;
 using Be.Repositories.Ngos;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,10 +12,11 @@ namespace Be.Services.Ngos
     public class NgoService : INgoService
     {
         private readonly INgoRepository _repo;
-
-        public NgoService(INgoRepository repo)
+        private readonly DatabaseContext _context;
+        public NgoService(INgoRepository repo, DatabaseContext context)
         {
             _repo = repo;
+            _context = context;
         }
 
         public async Task<IEnumerable<NgoDto>> GetAllAsync()
@@ -167,6 +169,12 @@ namespace Be.Services.Ngos
 
         public async Task DeleteAsync(int id)
         {
+            bool isUsed = await _context.CampaignNgos.AnyAsync(cp => cp.NgoId == id);
+
+            if (isUsed)
+            {
+                throw new InvalidOperationException("NGO is in use. Delete related campaigns first");
+            }
             await _repo.DeleteAsync(id);
         }
     }

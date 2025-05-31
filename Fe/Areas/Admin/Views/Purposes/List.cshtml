@@ -1,4 +1,5 @@
-﻿@model List<Fe.DTOs.Purposes.PurposeDto>
+﻿@using Newtonsoft.Json
+@model List<Fe.DTOs.Purposes.PurposeDto>
 
 @{
     ViewData["Title"] = "Purposes List";
@@ -59,7 +60,7 @@
 @section Scripts {
     <script>
         // Cảnh báo nếu có TempData Warning
-        const warning = "@TempData["Warning"]";
+        const warning = @Html.Raw(JsonConvert.SerializeObject(TempData["Warning"]));
         if (warning && warning.length > 0) {
             confirm(warning); // confirm chứ không phải alert
         }
