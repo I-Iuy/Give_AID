@@ -9,5 +9,6 @@ namespace Be.Repositories.ShareRepo
         Task AddAsync(Share entity);
         Task DeleteAsync(int id);
         Task SaveChangesAsync();
+        Task<IEnumerable<Share>> GetRecentSharesAsync(int? accountId, string? guestName);
     }
 }

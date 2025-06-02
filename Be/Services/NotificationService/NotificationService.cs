@@ -9,6 +9,7 @@ namespace Be.Services.NotificationService
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly IEmailService _emailService;
+        private const int MAX_NOTIFICATIONS_PER_USER = 100;
 
         public NotificationService(
             INotificationRepository notificationRepository,
@@ -18,8 +19,28 @@ namespace Be.Services.NotificationService
             _emailService = emailService;
         }
 
+        private async Task CleanupOldNotifications(int accountId)
+        {
+            var notifications = await _notificationRepository.GetByAccountIdAsync(accountId);
+            if (notifications.Count() > MAX_NOTIFICATIONS_PER_USER)
+            {
+                var oldNotifications = notifications
+                    .OrderByDescending(n => n.CreatedAt)
+                    .Skip(MAX_NOTIFICATIONS_PER_USER);
+
+                foreach (var notification in oldNotifications)
+                {
+                    _notificationRepository.Delete(notification);
+                }
+                await _notificationRepository.SaveChangesAsync();
+            }
+        }
+
         public async Task SendToUserAsync(CreateNotificationDto dto)
         {
+            // Kiểm tra và xóa thông báo cũ nếu cần
+            await CleanupOldNotifications(dto.AccountId);
+
             var notification = new UserNotification
             {
                 AccountId = dto.AccountId,
@@ -44,17 +65,23 @@ namespace Be.Services.NotificationService
 
         public async Task<IEnumerable<UserNotificationDto>> GetByAccountIdAsync(int accountId)
         {
+            // Kiểm tra và xóa thông báo cũ nếu cần
+            await CleanupOldNotifications(accountId);
+
             var notifications = await _notificationRepository.GetByAccountIdAsync(accountId);
 
-            return notifications.Select(n => new UserNotificationDto
-            {
-                NotificationId = n.NotificationId,
-                AccountId = n.AccountId,
-                Title = n.Title,
-                Message = n.Message,
-                IsRead = n.IsRead,
-                CreatedAt = n.CreatedAt
-            });
+            return notifications
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(MAX_NOTIFICATIONS_PER_USER)
+                .Select(n => new UserNotificationDto
+                {
+                    NotificationId = n.NotificationId,
+                    AccountId = n.AccountId,
+                    Title = n.Title,
+                    Message = n.Message,
+                    IsRead = n.IsRead,
+                    CreatedAt = n.CreatedAt
+                });
         }
 
         public async Task MarkAsReadAsync(int notificationId)

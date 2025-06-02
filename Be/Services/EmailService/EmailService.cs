@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
-using System.Net;
-using System.Net.Mail;
-using System.Threading.Tasks;
+﻿using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
+using Microsoft.Extensions.Configuration;
 
 namespace Be.Services.EmailService
 {
@@ -17,37 +17,35 @@ namespace Be.Services.EmailService
         public async Task SendShareEmailAsync(string toEmail, int campaignId)
         {
             var frontendBaseUrl = _config["AppSettings:FrontendBaseUrl"] ?? "https://localhost:3000";
-            var subject = "Chiến dịch được chia sẻ với bạn!";
+            var subject = "A Campaign Has Been Shared With You!";
             var body = $@"
-                <p>Bạn vừa nhận được một chiến dịch được chia sẻ!</p>
-                <p><a href='{frontendBaseUrl}/campaigns/{campaignId}'>Nhấn vào đây để xem chiến dịch</a></p>";
+                <p>You have received a campaign that was shared with you!</p>
+                <p><a href='{frontendBaseUrl}/campaign/{campaignId}'>View Campaign</a></p>
+            ";
 
             await SendAsync(toEmail, subject, body);
         }
 
         public async Task SendAsync(string toEmail, string subject, string body)
         {
-            var fromEmail = _config["EmailSettings:FromEmail"]
-                ?? throw new InvalidOperationException("FromEmail config is missing");
-            var password = _config["EmailSettings:Password"];
-            var smtpHost = _config["EmailSettings:SmtpHost"];
-            var smtpPortStr = _config["EmailSettings:SmtpPort"];
-            var smtpPort = int.TryParse(smtpPortStr, out var port) ? port : 587;
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("Charity App", _config["EmailSettings:From"]));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = subject;
+            message.Body = new TextPart("html") { Text = body };
 
-            var message = new MailMessage(fromEmail, toEmail)
-            {
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
+            using var client = new SmtpClient();
+            await client.ConnectAsync(
+                _config["EmailSettings:SmtpServer"],
+                int.Parse(_config["EmailSettings:Port"]),
+                SecureSocketOptions.StartTls);
 
-            using var smtp = new SmtpClient(smtpHost, smtpPort)
-            {
-                Credentials = new NetworkCredential(fromEmail, password),
-                EnableSsl = true
-            };
+            await client.AuthenticateAsync(
+                _config["EmailSettings:Username"],
+                _config["EmailSettings:Password"]);
 
-            await smtp.SendMailAsync(message);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
         }
     }
 }

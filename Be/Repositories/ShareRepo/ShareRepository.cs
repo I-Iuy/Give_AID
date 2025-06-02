@@ -46,5 +46,17 @@ namespace Be.Repositories.ShareRepo
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<Share>> GetRecentSharesAsync(int? accountId, string? guestName)
+        {
+            var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+            
+            return await _context.Shares
+                .Where(s => 
+                    (accountId.HasValue && s.AccountId == accountId) || 
+                    (!string.IsNullOrEmpty(guestName) && s.GuestName == guestName))
+                .Where(s => s.SharedAt >= oneHourAgo)
+                .ToListAsync();
+        }
     }
 }

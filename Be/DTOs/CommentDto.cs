@@ -1,4 +1,8 @@
-﻿namespace Be.DTOs
+﻿
+
+using Be.Controllers;
+
+namespace Be.DTOs
 {
     public class CommentDto
     {
@@ -14,5 +18,8 @@
         public int? ParentCommentId { get; set; }
 
         public bool IsReplied { get; set; }
+        public List<CommentDto>? Replies { get; set; }
+
+
     }
 }

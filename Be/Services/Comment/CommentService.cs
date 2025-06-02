@@ -14,9 +14,42 @@ namespace Be.Services.Comment
             _commentRepository = commentRepository;
         }
 
+        private void ValidateCommentContent(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                throw new Exception("Nội dung comment không được để trống");
+            }
+
+            if (content.Length > 1000)
+            {
+                throw new Exception("Nội dung comment không được vượt quá 1000 ký tự");
+            }
+
+            // Kiểm tra từ khóa nhạy cảm
+            var sensitiveWords = new[] { "spam", "advertisement", "quảng cáo" };
+            if (sensitiveWords.Any(word => content.ToLower().Contains(word)))
+            {
+                throw new Exception("Nội dung comment chứa từ khóa không được phép");
+            }
+        }
+
         // ✅ Thêm bình luận mới
         public async Task AddCommentAsync(CreateCommentDto dto)
         {
+            // Validate nội dung
+            ValidateCommentContent(dto.Content);
+
+            // Kiểm tra rate limiting (tối đa 5 comment trong 1 giờ)
+            var recentComments = await _commentRepository.GetRecentCommentsAsync(
+                dto.AccountId ?? 0, 
+                dto.GuestName ?? ""
+            );
+            if (recentComments.Count() >= 5)
+            {
+                throw new Exception("Bạn đã comment quá nhiều trong thời gian ngắn. Vui lòng thử lại sau.");
+            }
+
             var comment = new CommentModel
             {
                 Content = dto.Content,
@@ -32,7 +65,6 @@ namespace Be.Services.Comment
             await _commentRepository.SaveChangesAsync();
         }
 
-        // ✅ Lấy bình luận theo chiến dịch (chỉ bình luận cha)
         public async Task<IEnumerable<CommentDto>> GetCommentsByCampaignAsync(int campaignId)
         {
             var comments = await _commentRepository.GetCommentsByCampaignAsync(campaignId);
@@ -49,10 +81,24 @@ namespace Be.Services.Comment
                     GuestName = c.GuestName,
                     CampaignId = c.CampaignId,
                     ParentCommentId = c.ParentCommentId,
-                    IsReplied = c.Replies != null && c.Replies.Count > 0
+                    IsReplied = c.Replies != null && c.Replies.Count > 0,
+                    Replies = c.Replies?
+                        .Select(r => new CommentDto
+                        {
+                            CommentId = r.CommentId,
+                            Content = r.Content,
+                            IsAnonymous = r.IsAnonymous,
+                            CommentedAt = r.CommentedAt,
+                            AccountId = r.AccountId,
+                            GuestName = r.GuestName,
+                            CampaignId = r.CampaignId,
+                            ParentCommentId = r.ParentCommentId,
+                            IsReplied = false,
+                            Replies = null
+                        })
+                        .ToList()
                 });
         }
-
         // ✅ Xoá comment (và xoá luôn các phản hồi nếu có)
         public async Task DeleteCommentAsync(int commentId)
         {
@@ -109,7 +155,6 @@ namespace Be.Services.Comment
                     CampaignId = c.CampaignId,
                     CreatedAt = c.CommentedAt,
                     IsReplied = c.Replies?.Count > 0
-
                 });
         }
     }

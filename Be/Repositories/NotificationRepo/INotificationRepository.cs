@@ -10,5 +10,6 @@ namespace Be.Repositories.NotificationRepo
         Task MarkAsReadAsync(int id);
         Task SaveChangesAsync();
         Task<List<string>> GetAllUserEmailsAsync();
+        void Delete(UserNotification notification);
     }
 }

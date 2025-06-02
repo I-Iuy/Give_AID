@@ -54,5 +54,17 @@ namespace Be.Repositories.CommentRepo
                 .Include(c => c.Replies)
                 .FirstOrDefaultAsync(c => c.CommentId == commentId);
         }
+
+        public async Task<IEnumerable<Comment>> GetRecentCommentsAsync(int? accountId, string guestName)
+        {
+            var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+            
+            return await context.Comments
+                .Where(c => 
+                    (accountId.HasValue && c.AccountId == accountId) || 
+                    (!string.IsNullOrEmpty(guestName) && c.GuestName == guestName))
+                .Where(c => c.CommentedAt >= oneHourAgo)
+                .ToListAsync();
+        }
     }
 }

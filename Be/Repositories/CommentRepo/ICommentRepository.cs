@@ -10,5 +10,6 @@ namespace Be.Repositories.CommentRepo
         Task AddCommentAsync(Comment comment);
         void Delete(Comment comment);
         Task SaveChangesAsync();
+        Task<IEnumerable<Comment>> GetRecentCommentsAsync(int? accountId, string guestName);
     }
 }

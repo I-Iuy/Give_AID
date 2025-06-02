@@ -3,21 +3,59 @@ using Be.Models;
 using Be.Repositories.ShareRepo;
 using Be.Services.EmailService;
 
+using System.Text.RegularExpressions;
+using Be.Repositories.Campaigns;
+
 namespace Be.Services.ShareService
 {
     public class ShareService : IShareService
     {
         private readonly IShareRepository _shareRepository;
         private readonly IEmailService _emailService;
+        private readonly ICampaignRepository _campaignRepository;
 
-        public ShareService(IShareRepository shareRepository, IEmailService emailService)
+        public ShareService(
+            IShareRepository shareRepository, 
+            IEmailService emailService,
+            ICampaignRepository campaignRepository)
         {
             _shareRepository = shareRepository;
             _emailService = emailService;
+            _campaignRepository = campaignRepository;
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return false;
+            string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            return Regex.IsMatch(email, pattern);
         }
 
         public async Task<ShareDto> ShareAsync(CreateShareDto dto)
         {
+            // Kiểm tra campaign tồn tại
+            var campaign = await _campaignRepository.GetByIdAsync(dto.CampaignId);
+            if (campaign == null)
+            {
+                throw new Exception("Campaign không tồn tại");
+            }
+
+            // Kiểm tra email nếu share qua email
+            if (dto.Platform.ToLower() == "email" && !string.IsNullOrWhiteSpace(dto.ReceiverEmail))
+            {
+                if (!IsValidEmail(dto.ReceiverEmail))
+                {
+                    throw new Exception("Email người nhận không hợp lệ");
+                }
+            }
+
+            // Kiểm tra rate limiting (tối đa 5 lần share trong 1 giờ)
+            var recentShares = await _shareRepository.GetRecentSharesAsync(dto.AccountId ?? 0, dto.GuestName);
+            if (recentShares.Count() >= 5)
+            {
+                throw new Exception("Bạn đã share quá nhiều trong thời gian ngắn. Vui lòng thử lại sau.");
+            }
+
             var entity = new Share
             {
                 CampaignId = dto.CampaignId,

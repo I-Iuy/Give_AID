@@ -51,5 +51,10 @@ namespace Be.Repositories.NotificationRepo
                 .Select(a => a.Email!)
                 .ToListAsync();
         }
+
+        public void Delete(UserNotification notification)
+        {
+            _context.UserNotifications.Remove(notification);
+        }
     }
 }
