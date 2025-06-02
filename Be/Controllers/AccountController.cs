@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Net.Security;
 using System.Security.Claims;
 using System.Text.Json;
+using System.ComponentModel.DataAnnotations;
 
 namespace Be.Controllers
 {
@@ -28,25 +29,33 @@ namespace Be.Controllers
             _emailService = emailService;
         }
 
-        //REGISTER
-
         [HttpPost("register")]
-        public async Task<IActionResult> Register(AccountCreateDto dto)
+        public async Task<IActionResult> Register([FromBody] AccountRegisterDto dto)
         {
-            var existing = await _repository.LoginAsync(dto.Email, dto.Password);
+            if (!ModelState.IsValid)
+            {
+                var shortErrors = ModelState.Where(e => e.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.Errors.Select(err => err.ErrorMessage.Split('.').FirstOrDefault()).ToArray()
+                    );
+                return BadRequest(new { message = "Validation failed", errors = shortErrors });
+            }
+
+            var existing = await _repository.GetByEmailAsync(dto.Email);
             if (existing != null)
-                return BadRequest("Email already exists or is in use.");
+                return BadRequest(new { errors = new { Email = new[] { "Email already exists or in use." } } });
 
             var account = new Account
             {
-                Email = dto.Email,
+                Email = dto.Email.Trim(),
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                FullName = dto.FullName,
-                DisplayName = dto.DisplayName,
-                Phone = dto.Phone,
-                Address = dto.Address,
-                Name = dto.Name,
-                Role = string.IsNullOrWhiteSpace(dto.Role) ? "User" : dto.Role,
+                FullName = dto.FullName.Trim(),
+                DisplayName = dto.DisplayName.Trim(),
+                Phone = dto.Phone.Trim(),
+                Address = dto.Address.Trim(),
+                Name = string.IsNullOrWhiteSpace(dto.Name) ? null : dto.Name.Trim(),
+                Role = "User",
                 IsActive = true
             };
 
@@ -54,8 +63,6 @@ namespace Be.Controllers
             return Ok(new { message = "Registration successful", result.AccountId });
         }
 
-        //LOGIN
-        // POST: api/accounts/login
         [HttpPost("login")]
         public async Task<IActionResult> Login(AccountLoginDto dto)
         {
@@ -74,8 +81,6 @@ namespace Be.Controllers
             return Ok(new { token });
         }
 
-
-        //SHOW ACCOUNT INFO
         [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetMyInfo()
@@ -92,13 +97,14 @@ namespace Be.Controllers
                 Email = account.Email,
                 FullName = account.FullName,
                 DisplayName = account.DisplayName,
-                Role = account.Role
+                Role = account.Role,
+                Phone = account.Phone,
+                Address = account.Address
             };
 
             return Ok(dto);
         }
 
-        //SET ACTIVE AND DEACTIVATED WITH ACCOUNT = ADMIN
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> SetStatus(int id, [FromQuery] bool isActive)
@@ -108,7 +114,6 @@ namespace Be.Controllers
             return Ok(new { message = $"Account {(isActive ? "activated" : "deactivated")} successfully." });
         }
 
-        //GOOGLE LOGIN
         [HttpPost("google-login")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
         {
@@ -130,7 +135,6 @@ namespace Be.Controllers
             var name = data.ContainsKey("name") ? data["name"] : "";
             var givenName = data.ContainsKey("given_name") ? data["given_name"] : "";
 
-            
             var account = await _repository.LoginAsync(email, "");
             if (account == null)
             {
@@ -150,9 +154,6 @@ namespace Be.Controllers
             var token = _jwtService.GenerateToken(account);
             return Ok(new { token });
         }
-
-
-        //Reset Password (User forgot password)
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
@@ -175,12 +176,10 @@ namespace Be.Controllers
                 return StatusCode(500, new
                 {
                     error = "Unable to send reset email. Please check your email configuration.",
-                    details = ex.ToString() // hoặc ex.InnerException?.Message nếu bạn chỉ cần chi tiết nhất
+                    details = ex.ToString()
                 });
             }
-
         }
-
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
@@ -192,7 +191,6 @@ namespace Be.Controllers
             return Ok(new { message = "Password reset successfully." });
         }
 
-        //User Update Account Info
         [Authorize]
         [HttpPut("update")]
         public async Task<IActionResult> UpdateProfile([FromBody] AccountUpdateDto dto)
@@ -206,7 +204,6 @@ namespace Be.Controllers
             return Ok(new { message = "Profile updated successfully." });
         }
 
-        //User Change Password when logging in
         [Authorize]
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
@@ -214,11 +211,16 @@ namespace Be.Controllers
             var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(idStr, out int accountId)) return Unauthorized();
 
+            var account = await _repository.GetByIdAsync(accountId);
+            if (account == null || !account.IsActive)
+                return NotFound("Account not found or inactive.");
+
+            // ✅ Chặn Google account đổi mật khẩu
+            if (string.IsNullOrEmpty(account.Password))
+                return BadRequest("This account was registered using Google login. Please change your password via your Google account.");
+
             var hashed = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
             var result = await _repository.ChangePasswordAsync(accountId, dto.CurrentPassword, hashed);
-
-            if (result == 0)
-                return NotFound("Account not found or inactive.");
 
             if (result == 1)
                 return BadRequest("Current password is incorrect.");
@@ -226,7 +228,7 @@ namespace Be.Controllers
             return Ok(new { message = "Password changed successfully." });
         }
 
-        //Admin See All Account List on Dashboard
+
         [Authorize(Roles = "Admin")]
         [HttpGet("all")]
         public async Task<IActionResult> GetAllAccounts()
@@ -245,6 +247,5 @@ namespace Be.Controllers
 
             return Ok(result);
         }
-
     }
 }

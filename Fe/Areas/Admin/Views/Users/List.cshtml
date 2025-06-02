@@ -4,6 +4,13 @@
     ViewData["Title"] = "User List";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
+@if (TempData["Message"] != null)
+{
+    var alertType = TempData["MessageType"]?.ToString() ?? "info";
+    <div class="alert alert-@alertType text-center fw-semibold">
+        @TempData["Message"]
+    </div>
+}
 
 <div class="container-fluid px-4">
     <h1 class="mt-4">User List</h1>
@@ -16,16 +23,18 @@
 
     <div class="card mb-4">
         <div class="card-header">
-            <i class="fas fa-table"></i>
+            <i class="fas fa-table me-1"></i>
             List of Registered Users
         </div>
         <div class="card-body">
             <table id="datatablesSimple" class="table table-bordered">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Full Name</th>
                         <th>Email</th>
-                        <th>Subscribed</th>
+                        <th>Display Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -35,20 +44,30 @@
                         <tr>
                             <td>@user.FullName</td>
                             <td>@user.Email</td>
+                            <td>@user.DisplayName</td>
+                            <td>@user.Role</td>
                             <td>
-                                <input type="checkbox" disabled @(user.IsInterested ? "checked" : "") />
+                                <span class="badge @(user.IsActive ? "bg-success" : "bg-secondary")">
+                                    @(user.IsActive ? "Active" : "Blocked")
+                                </span>
                             </td>
-                            <td>
-                                <a class="btn btn-info btn-sm text-white"
+                            <td class="d-flex">
+                                <a class="btn btn-info btn-sm text-white me-1"
                                    asp-area="Admin"
                                    asp-controller="Users"
                                    asp-action="Details"
-                                   asp-route-id="@user.Id">
+                                   asp-route-id="@user.AccountId">
                                     <i class="fas fa-eye"></i> Details
                                 </a>
-                                <a class="btn btn-sm btn-danger text-white">
-                                    <i class="fas fa-ban"></i> Block
-                                </a>
+
+                                <form asp-area="Admin" asp-controller="Users" asp-action="ToggleStatus" method="post" onsubmit="return confirm('Are you sure?')">
+                                    <input type="hidden" name="id" value="@user.AccountId" />
+                                    <input type="hidden" name="isActive" value="@(user.IsActive ? "false" : "true")" />
+                                    <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-danger" : "btn-success") text-white">
+                                        <i class="fas @(user.IsActive ? "fa-ban" : "fa-check")"></i>
+                                        @(user.IsActive ? "Block" : "Unblock")
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     }

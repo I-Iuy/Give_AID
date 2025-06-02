@@ -21,11 +21,9 @@ namespace Fe.Areas.Web.Controllers
             _config = config;
         }
 
-        // GET: /Web/Account/Login
         [HttpGet]
         public IActionResult Login() => View();
 
-        // POST: /Web/Account/Login
         [HttpPost]
         public async Task<IActionResult> Login(AccountLoginViewModel model)
         {
@@ -74,37 +72,70 @@ namespace Fe.Areas.Web.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-
-        // GET: /Web/Account/Register
         [HttpGet]
         public IActionResult Register() => View();
 
-        // POST: /Web/Account/Register
         [HttpPost]
         public async Task<IActionResult> Register(AccountRegisterViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+            {
+                TempData["Message"] = "Please fill in all required fields correctly.";
+                TempData["MessageType"] = "danger";
+                return View(model);
+            }
 
             var client = _clientFactory.CreateClient();
             var content = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
-
             var response = await client.PostAsync($"{_config["ApiSettings:BaseUrl"]}accounts/register", content);
+
             if (response.IsSuccessStatusCode)
             {
-                TempData["Success"] = "Registration successful, please log in!";
+                TempData["Message"] = "Registration successful. Please log in.";
+                TempData["MessageType"] = "success";
                 return RedirectToAction("Login");
             }
 
-            var error = await response.Content.ReadAsStringAsync();
-            ModelState.AddModelError("", $"Registration error: {error}");
+            // Parse and simplify error message
+            var errorContent = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                var errorJson = JsonDocument.Parse(errorContent);
+                if (errorJson.RootElement.TryGetProperty("errors", out var errors))
+                {
+                    var sb = new StringBuilder();
+                    foreach (var error in errors.EnumerateObject())
+                    {
+                        foreach (var msg in error.Value.EnumerateArray())
+                        {
+                            sb.AppendLine($"{msg.GetString()}");
+                        }
+                    }
+
+                    TempData["Message"] = sb.ToString();
+                    TempData["MessageType"] = "danger";
+                }
+                else
+                {
+                    TempData["Message"] = "Registration failed. Please try again.";
+                    TempData["MessageType"] = "danger";
+                }
+            }
+            catch
+            {
+                TempData["Message"] = "An error occurred while registering. Please check your inputs.";
+                TempData["MessageType"] = "danger";
+            }
+
             return View(model);
         }
 
-        // GET: /Web/Account/ForgotPassword
+
+
         [HttpGet]
         public IActionResult ForgotPassword() => View();
 
-        // POST: /Web/Account/ForgotPassword
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
@@ -125,7 +156,6 @@ namespace Fe.Areas.Web.Controllers
             return View(model);
         }
 
-        //Reset Password
         [HttpGet]
         public IActionResult ResetPassword(string token)
         {
@@ -163,9 +193,6 @@ namespace Fe.Areas.Web.Controllers
             return View(model);
         }
 
-
-
-        // GET: /Web/Account/Logout
         [HttpGet]
         public IActionResult Logout()
         {
@@ -175,18 +202,14 @@ namespace Fe.Areas.Web.Controllers
             return RedirectToAction("Login");
         }
 
-        // POST: /Web/Account/GoogleCallback
         [HttpPost]
         public async Task<IActionResult> GoogleCallback([FromBody] GoogleLoginDto model)
         {
             var client = _clientFactory.CreateClient();
-
             var content = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
 
             var response = await client.PostAsync($"{_config["ApiSettings:BaseUrl"]}accounts/google-login", content);
-
-            if (!response.IsSuccessStatusCode)
-                return Unauthorized("Google login failed");
+            if (!response.IsSuccessStatusCode) return Unauthorized("Google login failed");
 
             var json = await response.Content.ReadAsStringAsync();
             var doc = JsonDocument.Parse(json);
@@ -194,7 +217,6 @@ namespace Fe.Areas.Web.Controllers
 
             HttpContext.Session.SetString("JWT", jwt);
 
-            // Gọi /me
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
             var meResponse = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}accounts/me");
 
@@ -208,6 +230,62 @@ namespace Fe.Areas.Web.Controllers
             }
 
             return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MyAccount()
+        {
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login");
+
+            var client = _clientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}accounts/me");
+            if (!response.IsSuccessStatusCode)
+                return RedirectToAction("Login");
+
+            var json = await response.Content.ReadAsStringAsync();
+            var user = JsonSerializer.Deserialize<AccountProfileViewModel>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            return View(user);
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword() => View();
+
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var token = HttpContext.Session.GetString("JWT");
+            var client = _clientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var data = new
+            {
+                currentPassword = model.CurrentPassword,
+                newPassword = model.NewPassword
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+
+            var response = await client.PutAsync($"{_config["ApiSettings:BaseUrl"]}accounts/change-password", content);
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["Success"] = "Password changed successfully!";
+                return RedirectToAction("MyAccount");
+            }
+
+            var error = await response.Content.ReadAsStringAsync();
+            ModelState.AddModelError("", $"Change password failed: {error}");
+            return View(model);
         }
     }
 }

@@ -52,35 +52,12 @@
                              data-logo_alignment="left">
                         </div>
 
-                        <script src="https://accounts.google.com/gsi/client" async defer></script>
-                        <script>
-                            async function handleCredentialResponse(response) {
-                                const idToken = response.credential;
-
-                                const res = await fetch('/Web/Account/GoogleCallback', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({ idToken })
-                                });
-
-                                if (res.ok) {
-                                    window.location.href = '/';
-                                } else {
-                                    alert("Google login failed");
-                                }
-                            }
-                        </script>
-
-                        @if (TempData["Success"] != null)
+                        @if (TempData["Message"] != null)
                         {
-                            <div class="alert alert-success mt-3">@TempData["Success"]</div>
-                        }
-
-                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        {
-                            <div class="alert alert-danger mt-2">@error.ErrorMessage</div>
+                            var alertType = TempData["MessageType"]?.ToString() ?? "info";
+                                <div class="alert alert-@alertType mt-3 text-center">
+                                @TempData["Message"]
+                                </div>
                         }
                     </form>
                 </div>
@@ -93,3 +70,26 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+            async function handleCredentialResponse(response) {
+                const idToken = response.credential;
+
+                const res = await fetch('/Web/Account/GoogleCallback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ idToken })
+                });
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    alert("Google login failed");
+                }
+            }
+        </script>
+}

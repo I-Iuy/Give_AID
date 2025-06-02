@@ -1,0 +1,36 @@
+﻿@model Fe.ViewModels.AccountProfileViewModel
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="container mt-5 mb-5">
+    <div class="card shadow p-4">
+        <h2 class="mb-4 text-primary">My Account</h2>
+        <dl class="row">
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">Full Name</dt>
+            <dd class="col-sm-9">@Model.FullName</dd>
+
+            <dt class="col-sm-3">Display Name</dt>
+            <dd class="col-sm-9">@Model.DisplayName</dd>
+
+            <dt class="col-sm-3">Phone</dt>
+            <dd class="col-sm-9">@Model.Phone</dd>
+
+            <dt class="col-sm-3">Address</dt>
+            <dd class="col-sm-9">@Model.Address</dd>
+        </dl>
+
+        <div class="mt-4">
+            <a href="@Url.Action("ChangePassword")" class="btn btn-warning">Change Password</a>
+        </div>
+        
+    </div>
+</div>

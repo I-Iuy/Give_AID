@@ -1,6 +1,5 @@
 using Be.Models;
 using Be.Repositories.Accounts;
-using Be.Repositories.ContentPageRepositories;
 using Be.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +24,7 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")));
 
 // Inject Repo
-builder.Services.AddScoped<IContentPageRepository, ContentPageRepository>();
+
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
 //Inject EmailService

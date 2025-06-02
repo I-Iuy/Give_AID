@@ -13,6 +13,7 @@ namespace Be.Repositories.Accounts
         Task<Account?> UpdateAsync(Account account);
         Task<bool> UpdateAccountInfoAsync(int id, AccountUpdateDto dto);
         Task<Account?> LoginAsync(string email, string password);
+        Task<Account?> GetByEmailAsync(string email);
         Task<bool> SetAccountStatusAsync(int id, bool isActive);
         Task<Account?> GetByResetTokenAsync(string token);
         Task<bool> SetResetTokenAsync(string email, string token, DateTime expires);

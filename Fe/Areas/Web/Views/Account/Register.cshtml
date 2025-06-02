@@ -12,37 +12,60 @@
                     <h3 class="text-center font-weight-light my-4">Create Account</h3>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Register" method="post">
+                    <form asp-action="Register" method="post" id="registerForm">
                         <div class="form-floating mb-3">
                             <input asp-for="Email" class="form-control" />
                             <label asp-for="Email"></label>
                             <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
+
                         <div class="form-floating mb-3">
                             <input asp-for="FullName" class="form-control" />
                             <label asp-for="FullName"></label>
                             <span asp-validation-for="FullName" class="text-danger"></span>
                         </div>
+
                         <div class="form-floating mb-3">
                             <input asp-for="DisplayName" class="form-control" />
                             <label asp-for="DisplayName"></label>
                             <span asp-validation-for="DisplayName" class="text-danger"></span>
                         </div>
-                        <div class="form-floating mb-3">
-                            <input asp-for="Phone" class="form-control" />
-                            <label asp-for="Phone"></label>
+
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <select id="countryCode" class="form-select" style="max-width: 120px;">
+                                    <option value="+84" selected>🇻🇳 +84</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+61">🇦🇺 +61</option>
+                                    <option value="+81">🇯🇵 +81</option>
+                                    <option value="+44">🇬🇧 +44</option>
+                                    <option value="+49">🇩🇪 +49</option>
+                                    <option value="+33">🇫🇷 +33</option>
+                                    <option value="+82">🇰🇷 +82</option>
+                                    <option value="+86">🇨🇳 +86</option>
+                                    <option value="+65">🇸🇬 +65</option>
+                                    <option value="+60">🇲🇾 +60</option>
+                                    <option value="+91">🇮🇳 +91</option>
+                                    <option value="+971">🇦🇪 +971</option>
+                                </select>
+                                <input id="phoneInput" class="form-control" placeholder="Enter phone number" />
+                            </div>
+                            <input type="hidden" asp-for="Phone" id="Phone" />
                             <span asp-validation-for="Phone" class="text-danger"></span>
                         </div>
+
                         <div class="form-floating mb-3">
                             <input asp-for="Address" class="form-control" />
                             <label asp-for="Address"></label>
                             <span asp-validation-for="Address" class="text-danger"></span>
                         </div>
+
                         <div class="form-floating mb-3">
                             <input asp-for="Password" type="password" class="form-control" />
                             <label asp-for="Password"></label>
                             <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
+
                         <div class="form-floating mb-3">
                             <input asp-for="Name" class="form-control" />
                             <label asp-for="Name"></label>
@@ -55,9 +78,21 @@
                             <span class="text-muted">or</span>
                         </div>
 
-                        <a class="btn btn-outline-dark w-100 mb-2" href="/signin-google">
-                            <i class="bi bi-google me-2"></i> Sign up with Google
-                        </a>
+                        <!-- Google Sign-In Button -->
+                        <div id="g_id_onload"
+                             data-client_id="1075692664543-0catpusg18j1htbf40jjnh9rln9co4lo.apps.googleusercontent.com"
+                             data-callback="handleCredentialResponse"
+                             data-auto_prompt="false">
+                        </div>
+
+                        <div class="g_id_signin"
+                             data-type="standard"
+                             data-size="large"
+                             data-theme="outline"
+                             data-text="continue_with"
+                             data-shape="rectangular"
+                             data-logo_alignment="left">
+                        </div>
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">
@@ -67,19 +102,42 @@
                 </div>
             </div>
 
-            @* Success message *@
-            @if (TempData["Success"] != null)
+            @if (TempData["Message"] != null)
             {
-                <div class="alert alert-success mt-3 text-center">@TempData["Success"]</div>
-            }
-
-            @* Server-side errors *@
-            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-            {
-                <div class="alert alert-danger mt-2">@error.ErrorMessage</div>
+                var alertType = TempData["MessageType"]?.ToString() ?? "info";
+                    <div class="alert alert-@alertType mt-3 text-center white-space-pre-line">
+                    @TempData["Message"]
+                    </div>
             }
         </div>
     </div>
 </div>
 
+@section Scripts {
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+            async function handleCredentialResponse(response) {
+                const idToken = response.credential;
 
+                const res = await fetch('/Web/Account/GoogleCallback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ idToken })
+                });
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    alert("Google login failed");
+                }
+            }
+
+            document.getElementById("registerForm").addEventListener("submit", function (e) {
+                const code = document.getElementById("countryCode").value;
+                const number = document.getElementById("phoneInput").value.trim();
+                document.getElementById("Phone").value = code + number;
+            });
+        </script>
+}

@@ -1,103 +1,99 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace Fe.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class UsersController : Controller
     {
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly IConfiguration _config;
+
+        public UsersController(IHttpClientFactory clientFactory, IConfiguration config)
+        {
+            _clientFactory = clientFactory;
+            _config = config;
+        }
+
         public class DonationDetail
         {
             public string Purpose { get; set; }
             public string Program { get; set; }
             public decimal Amount { get; set; }
             public DateTime Date { get; set; }
-            public string Status { get; set; } 
+            public string Status { get; set; }
         }
-
 
         public class User
         {
-            public int Id { get; set; }
-            public string UserName { get; set; }
-            public string FullName { get; set; }
+            public int AccountId { get; set; }
             public string Email { get; set; }
-            public string PhoneNumber { get; set; }
-            public string Address { get; set; }
-            public decimal TotalDonated { get; set; }
-            public bool IsInterested { get; set; }
-            public List<DonationDetail> Donations { get; set; }
+            public string FullName { get; set; }
+            public string DisplayName { get; set; }
+            public string Role { get; set; }
+            public bool IsActive { get; set; }
         }
 
-        private static readonly List<User> Users = new()
-{
-    new User
-    {
-        Id = 1,
-        UserName = "nguyenvana",
-        FullName = "Nguyen Van A",
-        Email = "nva@example.com",
-        PhoneNumber = "0123456789",
-        Address = "123 Nguyen Trai, Hanoi",
-        TotalDonated = 200,
-        IsInterested = true,
-        Donations = new List<DonationDetail>
+        // GET: Admin/Users/List
+        public async Task<IActionResult> List()
         {
-            new DonationDetail
+            var client = _clientFactory.CreateClient();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account", new { area = "Web" });
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = _config["ApiSettings:BaseUrl"] + "accounts/all";
+            var response = await client.GetAsync(apiUrl);
+
+            if (!response.IsSuccessStatusCode)
             {
-                Purpose = "Children",
-                Program = null,
-                Amount = 100,
-                Date = new DateTime(2024, 5, 1),
-                Status = "Success"
-            },
-            new DonationDetail
-            {
-                Purpose = "Children",
-                Program = "Scholarship Encouragement",
-                Amount = 100,
-                Date = new DateTime(2024, 6, 15),
-                Status = "Pending"
+                TempData["Message"] = "Failed to load user list.";
+                TempData["MessageType"] = "danger";
+                return View(new List<User>());
             }
-        }
-    },
-    new User
-    {
-        Id = 2,
-        UserName = "tranthib",
-        FullName = "Tran Thi B",
-        Email = "ttb@example.com",
-        PhoneNumber = "0987654321",
-        Address = "456 Le Loi, Hue",
-        TotalDonated = 300,
-        IsInterested = false,
-        Donations = new List<DonationDetail>
-        {
-            new DonationDetail
+
+            var json = await response.Content.ReadAsStringAsync();
+            var users = JsonSerializer.Deserialize<List<User>>(json, new JsonSerializerOptions
             {
-                Purpose = "Environment",
-                Program = null,
-                Amount = 300,
-                Date = new DateTime(2024, 7, 20),
-                Status = "Failed"
+                PropertyNameCaseInsensitive = true
+            });
+
+            return View(users);
+        }
+
+        // POST: Admin/Users/ToggleStatus
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatus(int id, bool isActive)
+        {
+            var client = _clientFactory.CreateClient();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account", new { area = "Web" });
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = _config["ApiSettings:BaseUrl"] + $"accounts/{id}/status?isActive={isActive}";
+            var response = await client.PutAsync(apiUrl, null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["Message"] = $"User has been {(isActive ? "activated" : "blocked")} successfully.";
+                TempData["MessageType"] = "success";
             }
-        }
-    }
-};
+            else
+            {
+                TempData["Message"] = "Failed to update user status.";
+                TempData["MessageType"] = "danger";
+            }
 
-
-        public IActionResult List()
-        {
-            return View(Users);
-        }
-
-        public IActionResult Details(int id)
-        {
-            var user = Users.FirstOrDefault(u => u.Id == id);
-            if (user == null) return NotFound();
-            return View(user);
+            return RedirectToAction("List");
         }
     }
 }
