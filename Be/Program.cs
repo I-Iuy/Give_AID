@@ -28,6 +28,9 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
 builder.Services.AddScoped<IContentPageRepository, ContentPageRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
+//Inject EmailService
+builder.Services.AddScoped<EmailService>();
+
 // Configure JWT authentication
 builder.Services.AddAuthentication(options =>
 {

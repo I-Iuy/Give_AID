@@ -1,4 +1,5 @@
-﻿@{
+﻿@model Fe.ViewModels.AccountRegisterViewModel
+@{
     Layout = "~/Areas/Web/Views/Shared/_AuthLayout.cshtml";
     ViewData["Title"] = "Register";
 }
@@ -11,58 +12,74 @@
                     <h3 class="text-center font-weight-light my-4">Create Account</h3>
                 </div>
                 <div class="card-body">
-                    <form>
+                    <form asp-action="Register" method="post">
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputEmail" type="email" placeholder="name@example.com" />
-                            <label for="inputEmail">Email address</label>
+                            <input asp-for="Email" class="form-control" />
+                            <label asp-for="Email"></label>
+                            <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputFullName" type="text" placeholder="Full Name" />
-                            <label for="inputFullName">Full Name</label>
+                            <input asp-for="FullName" class="form-control" />
+                            <label asp-for="FullName"></label>
+                            <span asp-validation-for="FullName" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputDisplayName" type="text" placeholder="Display Name" />
-                            <label for="inputDisplayName">Display Name</label>
+                            <input asp-for="DisplayName" class="form-control" />
+                            <label asp-for="DisplayName"></label>
+                            <span asp-validation-for="DisplayName" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputPhone" type="tel" placeholder="Phone Number" />
-                            <label for="inputPhone">Phone Number</label>
+                            <input asp-for="Phone" class="form-control" />
+                            <label asp-for="Phone"></label>
+                            <span asp-validation-for="Phone" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputAddress" type="text" placeholder="Address" />
-                            <label for="inputAddress">Address</label>
+                            <input asp-for="Address" class="form-control" />
+                            <label asp-for="Address"></label>
+                            <span asp-validation-for="Address" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputPassword" type="password" placeholder="Create a password" />
-                            <label for="inputPassword">Password</label>
+                            <input asp-for="Password" type="password" class="form-control" />
+                            <label asp-for="Password"></label>
+                            <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputConfirmPassword" type="password" placeholder="Confirm password" />
-                            <label for="inputConfirmPassword">Confirm Password</label>
+                            <input asp-for="Name" class="form-control" />
+                            <label asp-for="Name"></label>
+                            <span asp-validation-for="Name" class="text-danger"></span>
                         </div>
-                        <div class="mt-4">
-                            <div class="d-grid">
-                                <a class="btn btn-primary" href="/Web/Account/Login">Register</a>
-                            </div>
 
-                            <div class="text-center my-3">
-                                <span class="text-muted">or</span>
-                            </div>
+                        <button type="submit" class="btn btn-primary w-100">Register</button>
 
-                            <div class="d-grid">
-                                <a class="btn btn-outline-dark" href="/signin-google">
-                                    <i class="bi bi-google me-2"></i> Sign up with Google
-                                </a>
-                            </div>
+                        <div class="text-center my-3">
+                            <span class="text-muted">or</span>
                         </div>
+
+                        <a class="btn btn-outline-dark w-100 mb-2" href="/signin-google">
+                            <i class="bi bi-google me-2"></i> Sign up with Google
+                        </a>
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">
                     <div class="small">
-                        <a asp-area="Web" asp-controller="Account" asp-action="Login">Have an account? Go to login</a>
+                        <a asp-action="Login">Have an account? Go to login</a>
                     </div>
                 </div>
             </div>
+
+            @* Success message *@
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success mt-3 text-center">@TempData["Success"]</div>
+            }
+
+            @* Server-side errors *@
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div class="alert alert-danger mt-2">@error.ErrorMessage</div>
+            }
         </div>
     </div>
 </div>
+
+

@@ -65,6 +65,36 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
+
+    //Reset Password (User forgot password)
+    public async Task<Account?> GetByResetTokenAsync(string token)
+    {
+        return await _context.Accounts.FirstOrDefaultAsync(a => a.ResetToken == token && a.ResetTokenExpires > DateTime.UtcNow);
+    }
+
+    public async Task<bool> SetResetTokenAsync(string email, string token, DateTime expires)
+    {
+        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
+        if (account == null) return false;
+
+        account.ResetToken = token;
+        account.ResetTokenExpires = expires;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(string token, string newHashedPassword)
+    {
+        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.ResetToken == token && a.ResetTokenExpires > DateTime.UtcNow);
+        if (account == null) return false;
+
+        account.Password = newHashedPassword;
+        account.ResetToken = null;
+        account.ResetTokenExpires = null;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     //User Update Account Info
     public async Task<bool> UpdateAccountInfoAsync(int id, AccountUpdateDto dto)
     {
@@ -81,7 +111,7 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
-    // User change Pasword when login
+    // User change Pasword
     public async Task<int> ChangePasswordAsync(int id, string currentPassword, string newHashedPassword)
     {
         var account = await _context.Accounts.FindAsync(id);

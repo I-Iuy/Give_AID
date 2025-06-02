@@ -18,12 +18,14 @@ namespace Be.Controllers
         private readonly IAccountRepository _repository;
         private readonly JwtService _jwtService;
         private readonly IConfiguration _config;
+        private readonly EmailService _emailService;
 
-        public AccountsController(IAccountRepository repository, JwtService jwtService, IConfiguration config)
+        public AccountsController(IAccountRepository repository, JwtService jwtService, IConfiguration config, EmailService emailService)
         {
             _repository = repository;
             _jwtService = jwtService;
             _config = config;
+            _emailService = emailService;
         }
 
         //REGISTER
@@ -53,19 +55,25 @@ namespace Be.Controllers
         }
 
         //LOGIN
+        // POST: api/accounts/login
         [HttpPost("login")]
         public async Task<IActionResult> Login(AccountLoginDto dto)
         {
             var account = await _repository.LoginAsync(dto.Email, dto.Password);
+
             if (account == null)
-                return Unauthorized("Email not found or account is deactivated.");
+                return Unauthorized("Invalid credentials or inactive account.");
+
+            if (string.IsNullOrEmpty(account.Password))
+                return Unauthorized("This email was registered using Google. Please log in using Google instead.");
 
             if (!BCrypt.Net.BCrypt.Verify(dto.Password, account.Password))
-                return Unauthorized("Invalid password.");
+                return Unauthorized("Invalid credentials or inactive account.");
 
             var token = _jwtService.GenerateToken(account);
             return Ok(new { token });
         }
+
 
         //SHOW ACCOUNT INFO
         [Authorize]
@@ -141,6 +149,47 @@ namespace Be.Controllers
 
             var token = _jwtService.GenerateToken(account);
             return Ok(new { token });
+        }
+
+
+        //Reset Password (User forgot password)
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var token = Guid.NewGuid().ToString();
+            var expires = DateTime.UtcNow.AddMinutes(15);
+
+            var success = await _repository.SetResetTokenAsync(dto.Email, token, expires);
+            if (!success) return NotFound("Email not found.");
+
+            var resetLink = $"https://localhost:7108/web/account/resetpassword?token={token}";
+
+            try
+            {
+                await _emailService.SendResetEmail(dto.Email, resetLink);
+                return Ok(new { message = "A password reset link has been sent to your email." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    error = "Unable to send reset email. Please check your email configuration.",
+                    details = ex.ToString() // hoặc ex.InnerException?.Message nếu bạn chỉ cần chi tiết nhất
+                });
+            }
+
+        }
+
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var hashed = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            var success = await _repository.ResetPasswordAsync(dto.Token, hashed);
+            if (!success) return BadRequest("Invalid or expired token.");
+
+            return Ok(new { message = "Password reset successfully." });
         }
 
         //User Update Account Info

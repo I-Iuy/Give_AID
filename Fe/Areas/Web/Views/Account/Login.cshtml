@@ -1,4 +1,5 @@
-﻿@{
+﻿@model Fe.ViewModels.AccountLoginViewModel
+@{
     Layout = "~/Areas/Web/Views/Shared/_AuthLayout.cshtml";
     ViewData["Title"] = "Login";
 }
@@ -7,39 +8,86 @@
     <div class="row justify-content-center">
         <div class="col-lg-5">
             <div class="card shadow-lg border-0 rounded-lg mt-5">
-                <div class="card-header"><h3 class="text-center font-weight-light my-4">Login</h3></div>
+                <div class="card-header">
+                    <h3 class="text-center font-weight-light my-4">Login</h3>
+                </div>
                 <div class="card-body">
-                    <form>
+                    <form asp-action="Login" method="post">
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputEmail" type="email" placeholder="name@example.com" />
-                            <label for="inputEmail">Email address</label>
+                            <input asp-for="Email" class="form-control" placeholder="name@example.com" />
+                            <label asp-for="Email">Email address</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input class="form-control" id="inputPassword" type="password" placeholder="Password" />
-                            <label for="inputPassword">Password</label>
+                            <input asp-for="Password" type="password" class="form-control" placeholder="Password" />
+                            <label asp-for="Password">Password</label>
                         </div>
+
                         <div class="form-check mb-3">
                             <input class="form-check-input" id="inputRememberPassword" type="checkbox" value="" />
                             <label class="form-check-label" for="inputRememberPassword">Remember Password</label>
                         </div>
+
                         <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
-                         
-                            <a class="small"  asp-area="Web" asp-controller="Account" asp-action="ForgotPassword">Forgot Password?</a>
-                            <a class="btn btn-primary" asp-area="Web" asp-controller="Account" asp-action="Login">Login</a>
+                            <a class="small" asp-action="ForgotPassword">Forgot Password?</a>
+                            <button type="submit" class="btn btn-primary">Login</button>
                         </div>
 
                         <div class="text-center mt-3 mb-3">
                             <span class="text-muted">or</span>
                         </div>
 
-                        <a class="btn btn-outline-dark w-100 mb-3" href="/signin-google">
-                            <i class="bi bi-google me-2"></i> Continue with Google
-                        </a>
+                        <!-- Google Sign-In Button -->
+                        <div id="g_id_onload"
+                             data-client_id="1075692664543-0catpusg18j1htbf40jjnh9rln9co4lo.apps.googleusercontent.com"
+                             data-callback="handleCredentialResponse"
+                             data-auto_prompt="false">
+                        </div>
 
+                        <div class="g_id_signin"
+                             data-type="standard"
+                             data-size="large"
+                             data-theme="outline"
+                             data-text="continue_with"
+                             data-shape="rectangular"
+                             data-logo_alignment="left">
+                        </div>
+
+                        <script src="https://accounts.google.com/gsi/client" async defer></script>
+                        <script>
+                            async function handleCredentialResponse(response) {
+                                const idToken = response.credential;
+
+                                const res = await fetch('/Web/Account/GoogleCallback', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ idToken })
+                                });
+
+                                if (res.ok) {
+                                    window.location.href = '/';
+                                } else {
+                                    alert("Google login failed");
+                                }
+                            }
+                        </script>
+
+                        @if (TempData["Success"] != null)
+                        {
+                            <div class="alert alert-success mt-3">@TempData["Success"]</div>
+                        }
+
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div class="alert alert-danger mt-2">@error.ErrorMessage</div>
+                        }
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">
-                    <div class="small"><a asp-area="Web" asp-controller="Account" asp-action="Register">Need an account? Sign up!</a></div>
+                    <div class="small">
+                        <a asp-action="Register">Need an account? Sign up!</a>
+                    </div>
                 </div>
             </div>
         </div>
