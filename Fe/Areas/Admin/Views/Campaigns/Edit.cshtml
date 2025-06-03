@@ -20,6 +20,7 @@
         <div class="card-body">
             <form id="campaignForm" asp-action="Edit" method="post" enctype="multipart/form-data" onsubmit="updateContent()">
                 <input asp-for="CampaignId" type="hidden" />
+                <input asp-for="EventDate" type="hidden" />
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Campaign ID</label>

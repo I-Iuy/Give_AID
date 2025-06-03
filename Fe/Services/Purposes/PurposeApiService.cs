@@ -1,11 +1,6 @@
 ﻿using Fe.DTOs.Purposes;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Fe.Services.Purposes
 {
@@ -20,7 +15,7 @@ namespace Fe.Services.Purposes
             _baseUrl = configuration["ApiSettings:BaseUrl"];
         }
 
-        // Lấy danh sách Purpose
+        // Get all Purposes from the API
         public async Task<IEnumerable<PurposeDto>> GetAllAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/purpose");
@@ -29,7 +24,7 @@ namespace Fe.Services.Purposes
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<IEnumerable<PurposeDto>>(json);
         }
-        // Lấy Purpose theo ID
+        // Get Purpose by ID from the API
         public async Task<PurposeDto> GetByIdAsync(int id)
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/purpose/{id}");
@@ -38,7 +33,7 @@ namespace Fe.Services.Purposes
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<PurposeDto>(json);
         }
-        // Tạo mới Purpose
+        // Add a new Purpose from the API
         public async Task CreateAsync(CreatePurposeDto dto)
         {
             var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
@@ -47,10 +42,10 @@ namespace Fe.Services.Purposes
             if (!response.IsSuccessStatusCode)
             {
                 var errorMessage = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException(errorMessage); // Ném lỗi lên Controller
+                throw new HttpRequestException(errorMessage); 
             }
         }
-        // Kiểm tra xem Purpose có đang được sử dụng không
+        // Check if a Purpose is in use by ID from the API
         public async Task<bool> CheckInUseAsync(int id)
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/purpose/{id}/is-used");
@@ -66,7 +61,7 @@ namespace Fe.Services.Purposes
             var result = JsonConvert.DeserializeObject<dynamic>(content);
             return result.isUsed == true; 
         }
-        // Sửa Purpose
+        // Edit an existing Purpose from the API
         public async Task EditAsync(UpdatePurposeDto dto)
         {
             var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
@@ -82,7 +77,7 @@ namespace Fe.Services.Purposes
                 throw new HttpRequestException(errorMessage);
             }
         }
-        // Xóa Purpose theo ID
+        // Delete a Purpose by ID from the API
         public async Task DeleteAsync(int id)
         {
             var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/purpose/{id}");

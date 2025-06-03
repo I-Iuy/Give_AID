@@ -1,13 +1,6 @@
 ﻿using Fe.DTOs.Partners;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace Fe.Services.Partners
 {
@@ -25,7 +18,7 @@ namespace Fe.Services.Partners
             _httpClient = httpClient;
             _baseUrl = configuration["ApiSettings:BaseUrl"];
         }
-
+        // Create FileName
         private string GenerateFileName(string originalFileName)
         {
             var extension = Path.GetExtension(originalFileName);
@@ -36,8 +29,7 @@ namespace Fe.Services.Partners
 
             return $"{fileNameWithoutExt}_{timestamp}{extension}";
         }
-
-
+        // Save the logo file to the appropriate folder based on its extension
         private async Task<string> SaveLogoFileAsync(IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
@@ -60,11 +52,10 @@ namespace Fe.Services.Partners
                 await file.CopyToAsync(stream);
             }
 
-            // Sử dụng Path để xử lý đường dẫn một cách nhất quán
             var relativePath = fullPath.Replace("wwwroot", "").Replace("\\", "/");
             return relativePath.StartsWith("/") ? relativePath : "/" + relativePath;
         }
-
+        // Save the contract file to the appropriate folder based on its extension
         private async Task<string> SaveContractFileAsync(IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
@@ -87,20 +78,16 @@ namespace Fe.Services.Partners
                 await file.CopyToAsync(stream);
             }
 
-            // Sử dụng Path để xử lý đường dẫn một cách nhất quán
             var relativePath = fullPath.Replace("wwwroot", "").Replace("\\", "/");
             return relativePath.StartsWith("/") ? relativePath : "/" + relativePath;
         }
-
+        // Get the logo file stream based on the URL provided
         public FileStream GetLogoFileStream(string logoUrl)
         {
             if (string.IsNullOrWhiteSpace(logoUrl))
                 throw new ArgumentException("Logo URL is empty.");
 
-            // Bỏ dấu '/' đầu tiên nếu có
             var relativePath = logoUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-
-            // Xác định loại file: .png hoặc .svg
             var extension = Path.GetExtension(relativePath).ToLower();
 
             string fullPath = extension switch
@@ -115,16 +102,13 @@ namespace Fe.Services.Partners
 
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
         }
-
+        // Get the contract file stream based on the URL provided
         public FileStream GetContractFileStream(string contractFileUrl)
         {
             if (string.IsNullOrWhiteSpace(contractFileUrl))
                 throw new ArgumentException("Contract file URL is empty.");
 
-            // Bỏ dấu '/' đầu nếu có và chuẩn hóa đường dẫn
             var relativePath = contractFileUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-
-            // Lấy phần mở rộng để xác định loại file
             var extension = Path.GetExtension(relativePath).ToLower();
 
             string fullPath = extension switch
@@ -139,14 +123,13 @@ namespace Fe.Services.Partners
 
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
         }
-
+        // Delete files from the server based on the provided URLs
         private void DeleteFileAll(string logoUrl, string contractFileUrl)
         {
             void DeleteFile(string url)
             {
                 if (string.IsNullOrWhiteSpace(url)) return;
 
-                // Chuẩn hoá đường dẫn tuyệt đối từ wwwroot
                 var relativePath = url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var fullPath = Path.Combine("wwwroot", relativePath);
 
@@ -167,7 +150,7 @@ namespace Fe.Services.Partners
             DeleteFile(contractFileUrl);
         }
 
-        // GET: Lấy danh sách tất cả Partner
+        // Get all Partners from the API
         public async Task<IEnumerable<PartnerDto>> GetAllAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/partner");
@@ -176,8 +159,7 @@ namespace Fe.Services.Partners
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<IEnumerable<PartnerDto>>(json);
         }
-
-        // GET: Lấy Partner theo ID
+        // Get Partner by ID from the API
         public async Task<PartnerDto> GetByIdAsync(int id)
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/partner/{id}");
@@ -187,16 +169,12 @@ namespace Fe.Services.Partners
             return JsonConvert.DeserializeObject<PartnerDto>(json);
         }
 
-        // POST: Thêm Partner mới
+        // Add a new Partner from the API
         public async Task AddAsync(CreatePartnerDto dto, IFormFile logo, IFormFile contract)
         {
-            // Lưu file logo vào wwwroot và trả về đường dẫn
             dto.LogoUrl = await SaveLogoFileAsync(logo);
-
-            // Lưu file hợp đồng vào wwwroot và trả về đường dẫn
             dto.ContractFile = await SaveContractFileAsync(contract);
 
-            // Gửi DTO (chỉ chứa string path) sang BE qua API
             var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync($"{_baseUrl}/api/partner", content);
 
@@ -206,29 +184,40 @@ namespace Fe.Services.Partners
                 throw new HttpRequestException(errorMessage);
             }
         }
-
-        // PUT: Cập nhật Partner
-        public async Task EditAsync(UpdatePartnerDto dto, IFormFile logo, IFormFile contract)
+        // Check if a Partner is in use by ID from the API
+        public async Task<bool> CheckInUseAsync(int id)
         {
-            // Lấy thông tin Partner hiện tại để biết file cũ
+            var response = await _httpClient.GetAsync($"{_baseUrl}/api/partner/{id}/is-used");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage);
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<dynamic>(content);
+
+            return result.isUsed == true;
+        }
+        // Edit an existing Partner from the API
+        public async Task EditAsync(UpdatePartnerDto dto, IFormFile logo, IFormFile contract)
+        {      
             var oldPartner = await GetByIdAsync(dto.PartnerId);
 
             string oldLogoUrl = oldPartner.LogoUrl;
             string oldContractFile = oldPartner.ContractFile;
 
-            // Nếu có file logo mới
             if (logo != null && logo.Length > 0)
             {
                 dto.LogoUrl = await SaveLogoFileAsync(logo);
-                // Xoá logo cũ sau khi lưu mới thành công
+
                 DeleteFileAll(oldLogoUrl, null);
             }
 
-            // Nếu có file hợp đồng mới
             if (contract != null && contract.Length > 0)
             {
                 dto.ContractFile = await SaveContractFileAsync(contract);
-                // Xoá contract cũ sau khi lưu mới thành công
                 DeleteFileAll(null, oldContractFile);
             }
 
@@ -241,13 +230,10 @@ namespace Fe.Services.Partners
                 throw new HttpRequestException(errorMessage);
             }
         }
-
-        // DELETE: Xoá Partner theo ID
+        // Delete a Partner by ID from the API
         public async Task DeleteAsync(int id)
         {
-            // Lấy thông tin Partner trước khi xoá để lấy đường dẫn file
-            var partner = await GetByIdAsync(id); // Gọi lại API để lấy LogoUrl & ContractFile
-
+            var partner = await GetByIdAsync(id);
             var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/partner/{id}");
 
             if (!response.IsSuccessStatusCode)
@@ -258,7 +244,6 @@ namespace Fe.Services.Partners
                 throw new HttpRequestException(errorMessage);
             }
 
-            // Nếu xoá thành công → xoá file vật lý
             DeleteFileAll(partner.LogoUrl, partner.ContractFile);
         }
 

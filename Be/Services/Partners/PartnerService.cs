@@ -2,9 +2,7 @@
 using Be.Models;
 using Be.Repositories.Partners;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
 
 namespace Be.Services.Partners
 {

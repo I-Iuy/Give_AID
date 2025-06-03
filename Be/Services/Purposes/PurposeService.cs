@@ -1,10 +1,6 @@
 ﻿using Be.DTOs.Purposes;
 using Be.Models;
 using Be.Repositories.Purposes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Be.Services.Purposes
 {

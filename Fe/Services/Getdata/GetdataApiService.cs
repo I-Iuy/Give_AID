@@ -2,7 +2,6 @@
 using Fe.DTOs.Partners;
 using Fe.DTOs.Purposes;
 using Newtonsoft.Json;
-using System.Net.Http;
 
 namespace Fe.Services.Getdata
 {
@@ -15,7 +14,7 @@ namespace Fe.Services.Getdata
             _httpClient = httpClient;
             _baseUrl = configuration["ApiSettings:BaseUrl"];
         }
-        // GET: lấy danh sách tất cả các Purposes
+        // Get all purposes, partners, and NGOs from the API
         public async Task<List<PurposeDto>> GetAllPurposesAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/purpose");
@@ -24,8 +23,6 @@ namespace Fe.Services.Getdata
             return JsonConvert.DeserializeObject<List<PurposeDto>>(json);
 
         }
-
-        // GET: lấy danh sách tất cả các Partners
         public async Task<List<PartnerDto>> GetAllPartnersAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/partner");
@@ -33,7 +30,6 @@ namespace Fe.Services.Getdata
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<List<PartnerDto>>(json);
         }
-        // GET: lấy danh sách tất cả các NGOs
         public async Task<List<NgoDto>> GetAllNgosAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/ngo");

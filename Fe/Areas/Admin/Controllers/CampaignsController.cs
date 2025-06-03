@@ -18,7 +18,8 @@ namespace Fe.Areas.Admin.Controllers
             _campaignApiService = campaignApiService;
             _getdataApiService = getdataApiService;
         }
-        // GET: Purpose =1, Partners >=1, NGOs >= 1 
+
+        [HttpGet]
         private async Task<IActionResult> ReloadCampaignView(object dto, string viewName)
         {
             ViewBag.Purposes = (await _getdataApiService.GetAllPurposesAsync())
@@ -44,18 +45,17 @@ namespace Fe.Areas.Admin.Controllers
 
             return View(viewName, dto);
         }
-        // GET: Admin/Campaigns
+        [HttpGet]
         public async Task<IActionResult> List()
         {
             var campaigns = await _campaignApiService.GetAllAsync();
             return View(campaigns);
         }
+        [HttpGet]
         public async Task<IActionResult> Add()
         {
             return await ReloadCampaignView(new CreateCampaignDto(), "Add");
         }
-
-        // POST: Admin/Campaigns/Add
         [HttpPost]
         public async Task<IActionResult> Add(CreateCampaignDto dto)
         {
@@ -132,17 +132,14 @@ namespace Fe.Areas.Admin.Controllers
                 return await ReloadCampaignView(dto, "Add");
             }
         }
-        //GET: Admin/Campaigns/Edit/{id}
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             var campaign = await _campaignApiService.GetByIdAsync(id);
-
-            // Gọi toàn bộ danh sách
             var allPurposes = await _getdataApiService.GetAllPurposesAsync();
             var allPartners = await _getdataApiService.GetAllPartnersAsync();
             var allNgos = await _getdataApiService.GetAllNgosAsync();
 
-            // Map từ Name → Id
             var selectedPartnerIds = allPartners
                 .Where(p => campaign.PartnerNames.Contains(p.Name))
                 .Select(p => p.PartnerId)
@@ -189,7 +186,6 @@ namespace Fe.Areas.Admin.Controllers
 
             return View(dto);
         }
-        // POST: Admin/Campaigns/Edit/{id}
         [HttpPost]
         public async Task<IActionResult> Edit(UpdateCampaignDto dto)
         {
@@ -267,7 +263,6 @@ namespace Fe.Areas.Admin.Controllers
             }
          
         }
-        // GET: /Admin/Campaign/Delete/{id}
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {

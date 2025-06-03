@@ -2,10 +2,6 @@
 using Be.Models;
 using Be.Repositories.Ngos;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Be.Services.Ngos
 {
