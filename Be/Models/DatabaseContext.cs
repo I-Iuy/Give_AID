@@ -22,7 +22,7 @@ namespace Be.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Khóa chính tổng hợp cho bảng phụ
+            // Define composite keys for many-to-many relationships
             modelBuilder.Entity<CampaignPartner>()
                 .HasKey(pp => new { pp.CampaignId, pp.PartnerId });
 

@@ -5,8 +5,8 @@ namespace Be.Models
     public class Purpose
     {
         [Key]
-        public int PurposeId { get; set; } // tự động tăng
+        public int PurposeId { get; set; } // PK, auto-increment
         public string Title { get; set; }
-        public int AccountId { get; set; } // khóa ngoại
+        public int AccountId { get; set; } // FK
     }
 }
