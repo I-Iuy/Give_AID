@@ -20,7 +20,7 @@ namespace Be.Services.Purposes
             _context = context;
         }
 
-        // Lấy danh sách Purpose và chuyển sang DTO
+        // Get all purposes 
         public async Task<IEnumerable<PurposeDto>> GetAllAsync()
         {
             var purposes = await _repo.GetAllAsync();
@@ -31,7 +31,7 @@ namespace Be.Services.Purposes
                 Title = p.Title
             });
         }
-        // Lấy Purpose theo ID và chuyển sang DTO
+        // Get purpose by ID
         public async Task<PurposeDto> GetByIdAsync(int id)
         {
             var p = await _repo.GetByIdAsync(id);
@@ -41,12 +41,14 @@ namespace Be.Services.Purposes
                 Title = p.Title
             };
         }
+        // Check if Title is valid 
         private bool IsTitleValid(string title)
         {
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title must not be empty or whitespace.");
             return true;
         }
+        // Check if Title is unique
         private async Task<bool> IsTitleUnique(string title, int? excludeId = null)
         {
             var all = await _repo.GetAllAsync();
@@ -58,8 +60,7 @@ namespace Be.Services.Purposes
                 throw new ArgumentException("A purpose with the same title already exists.");
             return true;
         }
-
-        // Thêm Purpose mới (có kiểm tra trùng và trống)
+        // Add a new purpose
         public async Task AddAsync(CreatePurposeDto dto)
         {
             IsTitleValid(dto.Title);
@@ -72,6 +73,7 @@ namespace Be.Services.Purposes
 
             await _repo.AddAsync(purpose);
         }
+        // Edit an existing purpose
         public async Task EditAsync(UpdatePurposeDto dto)
         {
             IsTitleValid(dto.Title);
@@ -84,7 +86,7 @@ namespace Be.Services.Purposes
             existing.AccountId = dto.AccountId;
             await _repo.EditAsync(existing);
         }
-        // Xoá Purpose theo ID
+        // Delete a purpose ( with check if it is in use Campaigns)
         public async Task DeleteAsync(int id)
         {
             bool isUsed = _context.Campaigns.Any(c => c.PurposeId == id);

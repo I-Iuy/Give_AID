@@ -16,16 +16,12 @@ namespace Be.Controllers
         {
             _service = service;
         }
-
-        // GET: api/partner
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
-
-        // GET: api/partner/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -33,8 +29,6 @@ namespace Be.Controllers
             if (result == null) return NotFound();
             return Ok(result);
         }
-
-        // POST: api/partner
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePartnerDto dto)
         {
@@ -52,8 +46,6 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
-        // PUT: api/partner
         [HttpPut]
         public async Task<IActionResult> Edit([FromBody] UpdatePartnerDto dto)
         {
@@ -71,8 +63,6 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
-        // DELETE: api/partner/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

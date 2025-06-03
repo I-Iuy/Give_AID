@@ -19,15 +19,12 @@ namespace Be.Controllers
             _service = service;
             _usageService = usageService;
         }
-
-        // GET: api/purpose
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
-            return Ok(result); // Trả về danh sách dạng JSON
+            return Ok(result); 
         }
-        // GET: api/purpose/id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -35,7 +32,6 @@ namespace Be.Controllers
             if (result == null) return NotFound();
             return Ok(result);
         }
-        // POST: api/purpose
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePurposeDto dto)
         {
@@ -46,23 +42,20 @@ namespace Be.Controllers
             }
             catch (ArgumentException ex)
             {
-                // Trả lỗi nghiệp vụ ra FE (giao diện tiếng Anh)
                 return BadRequest(ex.Message);
             }
             catch (Exception)
             {
-                // Tránh leak lỗi hệ thống
+      
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-        // Kiểm tra Purpose trong Campaigns
         [HttpGet("{id}/is-used")]
         public async Task<IActionResult> IsPurposeUsed(int id)
         {
             bool isUsed = await _usageService.IsPurposeUsedAsync(id);
             return Ok(new { isUsed });
         }
-        // PUT: api/edit/purpose
         [HttpPut]
         public async Task<IActionResult> Edit([FromBody] UpdatePurposeDto dto)
         {
@@ -80,7 +73,6 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-        // DELETE: api/purpose/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
