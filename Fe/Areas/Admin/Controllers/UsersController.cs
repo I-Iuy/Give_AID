@@ -36,6 +36,18 @@ namespace Fe.Areas.Admin.Controllers
             public bool IsActive { get; set; }
         }
 
+        public class UserDetail
+        {
+            public int AccountId { get; set; }
+            public string Email { get; set; }
+            public string FullName { get; set; }
+            public string DisplayName { get; set; }
+            public string Role { get; set; }
+            public string Phone { get; set; }
+            public string Address { get; set; }
+            public bool IsActive { get; set; }
+        }
+
         // GET: Admin/Users/List
         public async Task<IActionResult> List()
         {
@@ -94,6 +106,28 @@ namespace Fe.Areas.Admin.Controllers
             }
 
             return RedirectToAction("List");
+        }
+
+        // Account Details
+        public async Task<IActionResult> Details(int id)
+        {
+            var client = _clientFactory.CreateClient();
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account", new { area = "Web" });
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = _config["ApiSettings:BaseUrl"] + $"accounts/{id}";
+            var response = await client.GetAsync(apiUrl);
+
+            if (!response.IsSuccessStatusCode)
+                return RedirectToAction("List");
+
+            var json = await response.Content.ReadAsStringAsync();
+            var user = JsonSerializer.Deserialize<UserDetail>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return View(user);
         }
     }
 }

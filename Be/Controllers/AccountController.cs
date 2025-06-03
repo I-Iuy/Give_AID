@@ -63,6 +63,7 @@ namespace Be.Controllers
             return Ok(new { message = "Registration successful", result.AccountId });
         }
 
+
         [HttpPost("login")]
         public async Task<IActionResult> Login(AccountLoginDto dto)
         {
@@ -247,5 +248,29 @@ namespace Be.Controllers
 
             return Ok(result);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetAccountById(int id)
+        {
+            var account = await _repository.GetByIdAsync(id);
+            if (account == null)
+                return NotFound();
+
+            var dto = new AccountGetDto
+            {
+                AccountId = account.AccountId,
+                Email = account.Email,
+                FullName = account.FullName,
+                DisplayName = account.DisplayName,
+                Role = account.Role,
+                Phone = account.Phone,
+                Address = account.Address,
+                IsActive = account.IsActive
+            };
+
+            return Ok(dto);
+        }
+
     }
 }
