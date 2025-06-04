@@ -1,7 +1,4 @@
-﻿using Fe.Dtos.Ngos;
-using Fe.DTOs.Campaigns;
-using Fe.DTOs.Partners;
-using Fe.DTOs.Purposes;
+﻿using Fe.DTOs.Campaigns;
 
 namespace Fe.Services.Campaigns
 {

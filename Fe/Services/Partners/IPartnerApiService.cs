@@ -1,7 +1,4 @@
 ﻿using Fe.DTOs.Partners;
-using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Fe.Services.Partners
 {

@@ -1,6 +1,4 @@
 ﻿using Fe.Dtos.Ngos;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Fe.Services.Ngos
 {

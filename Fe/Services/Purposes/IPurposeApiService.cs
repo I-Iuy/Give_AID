@@ -1,6 +1,4 @@
 ﻿using Fe.DTOs.Purposes;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Fe.Services.Purposes
 {
