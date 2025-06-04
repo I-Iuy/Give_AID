@@ -3,7 +3,11 @@
 @{
     ViewData["Title"] = "User List";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+    string currentSort = Context.Request.Query["sortBy"];
+    bool currentDesc = Context.Request.Query["desc"] == "true";
 }
+
 @if (TempData["Message"] != null)
 {
     var alertType = TempData["MessageType"]?.ToString() ?? "info";
@@ -30,10 +34,34 @@
             <table id="datatablesSimple" class="table table-bordered">
                 <thead class="table-light">
                     <tr>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Display Name</th>
-                        <th>Role</th>
+                        <th>
+                            <a asp-action="List"
+                               asp-route-sortBy="FullName"
+                               asp-route-desc="@(currentSort == "FullName" && !currentDesc)">
+                                Full Name @(currentSort == "FullName" ? (currentDesc ? "🔽" : "🔼") : "")
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="List"
+                               asp-route-sortBy="Email"
+                               asp-route-desc="@(currentSort == "Email" && !currentDesc)">
+                                Email @(currentSort == "Email" ? (currentDesc ? "🔽" : "🔼") : "")
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="List"
+                               asp-route-sortBy="DisplayName"
+                               asp-route-desc="@(currentSort == "DisplayName" && !currentDesc)">
+                                Display Name @(currentSort == "DisplayName" ? (currentDesc ? "🔽" : "🔼") : "")
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="List"
+                               asp-route-sortBy="Role"
+                               asp-route-desc="@(currentSort == "Role" && !currentDesc)">
+                                Role @(currentSort == "Role" ? (currentDesc ? "🔽" : "🔼") : "")
+                            </a>
+                        </th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>

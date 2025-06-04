@@ -9,6 +9,7 @@ using System.Net.Security;
 using System.Security.Claims;
 using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Dynamic.Core;
 
 namespace Be.Controllers
 {
@@ -63,7 +64,6 @@ namespace Be.Controllers
             return Ok(new { message = "Registration successful", result.AccountId });
         }
 
-
         [HttpPost("login")]
         public async Task<IActionResult> Login(AccountLoginDto dto)
         {
@@ -100,7 +100,8 @@ namespace Be.Controllers
                 DisplayName = account.DisplayName,
                 Role = account.Role,
                 Phone = account.Phone,
-                Address = account.Address
+                Address = account.Address,
+                IsActive = account.IsActive
             };
 
             return Ok(dto);
@@ -216,7 +217,6 @@ namespace Be.Controllers
             if (account == null || !account.IsActive)
                 return NotFound("Account not found or inactive.");
 
-            // ✅ Chặn Google account đổi mật khẩu
             if (string.IsNullOrEmpty(account.Password))
                 return BadRequest("This account was registered using Google login. Please change your password via your Google account.");
 
@@ -229,12 +229,38 @@ namespace Be.Controllers
             return Ok(new { message = "Password changed successfully." });
         }
 
-
         [Authorize(Roles = "Admin")]
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllAccounts()
+        public async Task<IActionResult> GetAllAccounts([FromQuery] string? search = null, [FromQuery] string? role = null, [FromQuery] string sortBy = "FullName", [FromQuery] bool desc = false)
         {
             var accounts = await _repository.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                accounts = accounts.Where(a =>
+                    a.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    a.Email.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    a.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                accounts = accounts.Where(a => a.Role.Equals(role, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                try
+                {
+                    accounts = desc
+                        ? accounts.AsQueryable().OrderBy($"{sortBy} descending").ToList()
+                        : accounts.AsQueryable().OrderBy($"{sortBy}").ToList();
+                }
+                catch
+                {
+                    return BadRequest("Invalid sort field.");
+                }
+            }
 
             var result = accounts.Select(a => new AccountListItemDto
             {
@@ -271,6 +297,5 @@ namespace Be.Controllers
 
             return Ok(dto);
         }
-
     }
 }

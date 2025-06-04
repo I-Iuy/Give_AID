@@ -17,15 +17,6 @@ namespace Fe.Areas.Admin.Controllers
             _config = config;
         }
 
-        public class DonationDetail
-        {
-            public string Purpose { get; set; }
-            public string Program { get; set; }
-            public decimal Amount { get; set; }
-            public DateTime Date { get; set; }
-            public string Status { get; set; }
-        }
-
         public class User
         {
             public int AccountId { get; set; }
@@ -49,7 +40,7 @@ namespace Fe.Areas.Admin.Controllers
         }
 
         // GET: Admin/Users/List
-        public async Task<IActionResult> List()
+        public async Task<IActionResult> List(string? search, string? role, string sortBy = "FullName", bool desc = false)
         {
             var client = _clientFactory.CreateClient();
             var token = HttpContext.Session.GetString("JWT");
@@ -59,7 +50,13 @@ namespace Fe.Areas.Admin.Controllers
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _config["ApiSettings:BaseUrl"] + "accounts/all";
+            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/all?sortBy={sortBy}&desc={desc.ToString().ToLower()}";
+
+            if (!string.IsNullOrWhiteSpace(search))
+                apiUrl += $"&search={Uri.EscapeDataString(search)}";
+            if (!string.IsNullOrWhiteSpace(role))
+                apiUrl += $"&role={Uri.EscapeDataString(role)}";
+
             var response = await client.GetAsync(apiUrl);
 
             if (!response.IsSuccessStatusCode)
@@ -70,10 +67,13 @@ namespace Fe.Areas.Admin.Controllers
             }
 
             var json = await response.Content.ReadAsStringAsync();
-            var users = JsonSerializer.Deserialize<List<User>>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var users = JsonSerializer.Deserialize<List<User>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            // Lưu lại giá trị tìm kiếm để giữ UI
+            ViewBag.Search = search;
+            ViewBag.Role = role;
+            ViewBag.SortBy = sortBy;
+            ViewBag.Desc = desc.ToString().ToLower();
 
             return View(users);
         }
@@ -91,7 +91,7 @@ namespace Fe.Areas.Admin.Controllers
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _config["ApiSettings:BaseUrl"] + $"accounts/{id}/status?isActive={isActive}";
+            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/{id}/status?isActive={isActive}";
             var response = await client.PutAsync(apiUrl, null);
 
             if (response.IsSuccessStatusCode)
@@ -108,21 +108,26 @@ namespace Fe.Areas.Admin.Controllers
             return RedirectToAction("List");
         }
 
-        // Account Details
+        // GET: Admin/Users/Details/{id}
         public async Task<IActionResult> Details(int id)
         {
             var client = _clientFactory.CreateClient();
             var token = HttpContext.Session.GetString("JWT");
+
             if (string.IsNullOrEmpty(token))
                 return RedirectToAction("Login", "Account", new { area = "Web" });
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _config["ApiSettings:BaseUrl"] + $"accounts/{id}";
+            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/{id}";
             var response = await client.GetAsync(apiUrl);
 
             if (!response.IsSuccessStatusCode)
+            {
+                TempData["Message"] = "Failed to load user details.";
+                TempData["MessageType"] = "danger";
                 return RedirectToAction("List");
+            }
 
             var json = await response.Content.ReadAsStringAsync();
             var user = JsonSerializer.Deserialize<UserDetail>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
