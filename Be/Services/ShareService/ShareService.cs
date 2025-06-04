@@ -2,9 +2,9 @@
 using Be.Models;
 using Be.Repositories.ShareRepo;
 using Be.Services.EmailService;
-
 using System.Text.RegularExpressions;
 using Be.Repositories.Campaigns;
+using Microsoft.Extensions.Logging;
 
 namespace Be.Services.ShareService
 {
@@ -13,16 +13,123 @@ namespace Be.Services.ShareService
         private readonly IShareRepository _shareRepository;
         private readonly IEmailService _emailService;
         private readonly ICampaignRepository _campaignRepository;
+        private readonly ILogger<ShareService> _logger;
 
         public ShareService(
-            IShareRepository shareRepository, 
+            IShareRepository shareRepository,
             IEmailService emailService,
-            ICampaignRepository campaignRepository)
+            ICampaignRepository campaignRepository,
+            ILogger<ShareService> logger)
         {
             _shareRepository = shareRepository;
             _emailService = emailService;
             _campaignRepository = campaignRepository;
+            _logger = logger;
         }
+
+        public async Task<ShareDto> ShareAsync(CreateShareDto dto, string baseUrl)
+        {
+            try
+            {
+                _logger.LogInformation("[ShareService] Starting share process for campaign {CampaignId} on platform {Platform}", 
+                    dto.CampaignId, dto.Platform);
+
+                if (dto == null)
+                {
+                    _logger.LogError("[ShareService] Share request is null");
+                    throw new Exception("Share request cannot be null");
+                }
+
+                // Validate campaign
+                var campaign = await ValidateCampaign(dto.CampaignId.Value);
+                _logger.LogInformation("[ShareService] Campaign validated: {CampaignTitle}", campaign.Title);
+
+                // Validate email if sharing via email
+                if (IsEmailPlatform(dto.Platform))
+                {
+                    _logger.LogInformation("[ShareService] Validating email for platform: {Platform}", dto.Platform);
+                    ValidateEmail(dto.ReceiverEmail);
+                }
+
+                // Check rate limiting
+                await CheckRateLimit(dto.AccountId, dto.GuestName);
+                _logger.LogInformation("[ShareService] Rate limit check passed for user {AccountId}/{GuestName}", 
+                    dto.AccountId ?? 0, dto.GuestName ?? "anonymous");
+
+                // Create and save share record
+                var share = await CreateShareRecord(dto);
+                _logger.LogInformation("[ShareService] Share record created with ID: {ShareId}", share.ShareId);
+
+                // Send email if needed
+                if (IsEmailPlatform(dto.Platform))
+                {
+                    _logger.LogInformation("[ShareService] Sending email for platform: {Platform}", dto.Platform);
+                    await SendShareEmail(dto, campaign, baseUrl);
+                }
+                else
+                {
+                    _logger.LogInformation("[ShareService] Skipping email send for platform: {Platform}", dto.Platform);
+                }
+
+                var result = MapToShareDto(share, campaign);
+                _logger.LogInformation("[ShareService] Share process completed successfully for campaign {CampaignId}", dto.CampaignId);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ShareService] Error sharing campaign {CampaignId}: {ErrorMessage}", 
+                    dto?.CampaignId, ex.Message);
+                throw new Exception($"Failed to share campaign: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<IEnumerable<ShareDto>> GetAllAsync()
+        {
+            try
+            {
+                _logger.LogInformation("[ShareService] Getting all shares");
+                var shares = await _shareRepository.GetAllAsync();
+                var shareDtos = new List<ShareDto>();
+                
+                foreach (var share in shares)
+                {
+                    var campaign = await _campaignRepository.GetByIdAsync(share.CampaignId);
+                    shareDtos.Add(MapToShareDto(share, campaign));
+                }
+                
+                return shareDtos;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ShareService] Error getting all shares");
+                throw new Exception($"Error retrieving share list: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<ShareDto?> GetByIdAsync(int id)
+        {
+            try
+            {
+                _logger.LogInformation("[ShareService] Getting share by ID {Id}", id);
+                var share = await _shareRepository.GetByIdAsync(id);
+                
+                if (share == null)
+                {
+                    _logger.LogWarning("[ShareService] Share with ID {Id} not found", id);
+                    return null;
+                }
+
+                var campaign = await _campaignRepository.GetByIdAsync(share.CampaignId);
+                return MapToShareDto(share, campaign);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ShareService] Error getting share by ID {Id}", id);
+                throw new Exception($"Error retrieving share information: {ex.Message}", ex);
+            }
+        }
+
+        #region Private Methods
 
         private bool IsValidEmail(string email)
         {
@@ -31,34 +138,111 @@ namespace Be.Services.ShareService
             return Regex.IsMatch(email, pattern);
         }
 
-        public async Task<ShareDto> ShareAsync(CreateShareDto dto)
+        private bool IsEmailPlatform(string platform)
         {
-            // Kiểm tra campaign tồn tại
-            var campaign = await _campaignRepository.GetByIdAsync(dto.CampaignId);
+            return !string.IsNullOrEmpty(platform) && platform.ToLower() == "email";
+        }
+
+        private async Task<Campaign> ValidateCampaign(int campaignId)
+        {
+            _logger.LogInformation("[ShareService] Validating campaign {CampaignId}", campaignId);
+            var campaign = await _campaignRepository.GetByIdAsync(campaignId);
             if (campaign == null)
             {
-                throw new Exception("Campaign không tồn tại");
+                _logger.LogWarning("[ShareService] Campaign {CampaignId} not found", campaignId);
+                throw new Exception("Campaign not found");
             }
+            return campaign;
+        }
 
-            // Kiểm tra email nếu share qua email
-            if (dto.Platform.ToLower() == "email" && !string.IsNullOrWhiteSpace(dto.ReceiverEmail))
+        private void ValidateEmail(string? email)
+        {
+            _logger.LogInformation("[ShareService] Validating email for {Email}", email);
+            
+            if (string.IsNullOrWhiteSpace(email))
             {
-                if (!IsValidEmail(dto.ReceiverEmail))
-                {
-                    throw new Exception("Email người nhận không hợp lệ");
-                }
+                throw new Exception("Please enter recipient's email address");
             }
 
-            // Kiểm tra rate limiting (tối đa 5 lần share trong 1 giờ)
-            var recentShares = await _shareRepository.GetRecentSharesAsync(dto.AccountId ?? 0, dto.GuestName);
+            // Check if email is only whitespace
+            if (email.Trim().Length == 0)
+            {
+                throw new Exception("Email address cannot contain only spaces");
+            }
+
+            // Basic email format validation
+            string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            if (!Regex.IsMatch(email, pattern))
+            {
+                throw new Exception("Invalid email address format");
+            }
+
+            // Check for common disposable email domains
+            var disposableDomains = new[] {
+                "tempmail.com", "throwawaymail.com", "mailinator.com",
+                "guerrillamail.com", "10minutemail.com", "yopmail.com",
+                "temp-mail.org", "sharklasers.com", "guerrillamail.info",
+                "guerrillamail.biz", "guerrillamail.com", "guerrillamail.de",
+                "guerrillamail.net", "guerrillamail.org", "guerrillamailblock.com",
+                "spam4.me", "trashmail.com", "trashmail.me", "trashmail.net"
+            };
+
+            var domain = email.Split('@')[1].ToLower();
+            if (disposableDomains.Contains(domain))
+            {
+                throw new Exception("Disposable email addresses are not allowed");
+            }
+
+            // Check for maximum length
+            if (email.Length > 254) // RFC 5321
+            {
+                throw new Exception("Email address is too long");
+            }
+
+            // Check for consecutive dots
+            if (email.Contains(".."))
+            {
+                throw new Exception("Email address contains invalid consecutive dots");
+            }
+
+            // Check for special characters in local part
+            var localPart = email.Split('@')[0];
+            if (Regex.IsMatch(localPart, @"[<>()[\]\\,;:\s""]"))
+            {
+                throw new Exception("Email address contains invalid characters");
+            }
+
+            // Check for domain format
+            var domainPart = email.Split('@')[1];
+            if (!Regex.IsMatch(domainPart, @"^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$"))
+            {
+                throw new Exception("Invalid domain format in email address");
+            }
+        }
+
+        private async Task CheckRateLimit(int? accountId, string? guestName)
+        {
+            _logger.LogInformation("[ShareService] Checking rate limit for user {AccountId}/{GuestName}",
+                accountId ?? 0, guestName ?? "anonymous");
+
+            var recentShares = await _shareRepository.GetRecentSharesAsync(accountId ?? 0, guestName);
             if (recentShares.Count() >= 5)
             {
-                throw new Exception("Bạn đã share quá nhiều trong thời gian ngắn. Vui lòng thử lại sau.");
+                _logger.LogWarning("[ShareService] Rate limit exceeded for user {AccountId}/{GuestName}",
+                    accountId ?? 0, guestName ?? "anonymous");
+                throw new Exception("You have shared too many times in a short period. Please try again after 1 hour.");
             }
 
+            _logger.LogInformation("[ShareService] Rate limiting check passed");
+        }
+
+        private async Task<Share> CreateShareRecord(CreateShareDto dto)
+        {
+            _logger.LogInformation("[ShareService] Creating share record for campaign {CampaignId}", dto.CampaignId);
+            
             var entity = new Share
             {
-                CampaignId = dto.CampaignId,
+                CampaignId = dto.CampaignId.Value,
                 AccountId = dto.AccountId,
                 GuestName = dto.GuestName,
                 ReceiverEmail = dto.ReceiverEmail,
@@ -66,64 +250,48 @@ namespace Be.Services.ShareService
                 SharedAt = DateTime.UtcNow
             };
 
+            _logger.LogInformation("[ShareService] Created share object: {@Share}", entity);
             await _shareRepository.AddAsync(entity);
             await _shareRepository.SaveChangesAsync();
+            _logger.LogInformation("[ShareService] Share saved to database successfully with ID: {ShareId}", entity.ShareId);
 
-            // Gửi email nếu là Email
-            if (dto.Platform.ToLower() == "email" && !string.IsNullOrWhiteSpace(dto.ReceiverEmail))
-            {
-                await _emailService.SendShareEmailAsync(dto.ReceiverEmail, dto.CampaignId);
-            }
+            return entity;
+        }
 
+        private async Task SendShareEmail(CreateShareDto dto, Campaign campaign, string baseUrl)
+        {
+            _logger.LogInformation("[ShareService] Sending email to {Email}", dto.ReceiverEmail);
+
+            var subject = $"Check out this campaign: {campaign.Title}";
+            var body = $@"Hello,
+
+{dto.GuestName} wants you to check out this campaign: {campaign.Title}
+
+Click here to view: {_emailService.GetCampaignUrl(baseUrl, campaign.CampaignId)}
+
+Best regards,
+CharityHub Team";
+
+            await _emailService.SendAsync(dto.ReceiverEmail, subject, body);
+            _logger.LogInformation("[ShareService] Email sent successfully to {Email}", dto.ReceiverEmail);
+        }
+
+        private ShareDto MapToShareDto(Share share, Campaign? campaign = null)
+        {
             return new ShareDto
             {
-                ShareId = entity.ShareId,
-                CampaignId = entity.CampaignId,
-                GuestName = entity.GuestName,
-                ReceiverEmail = entity.ReceiverEmail,
-                Platform = entity.Platform,
-                SharedAt = entity.SharedAt,
-                AccountId = entity.AccountId,
-                AccountName = entity.Account?.FullName ?? "",
-                CampaignTitle = entity.Campaign?.Title ?? ""
+                ShareId = share.ShareId,
+                CampaignId = share.CampaignId,
+                CampaignTitle = campaign?.Title ?? share.Campaign?.Title ?? "",
+                AccountId = share.AccountId,
+                AccountName = share.Account?.FullName ?? "",
+                GuestName = share.GuestName,
+                ReceiverEmail = share.ReceiverEmail,
+                Platform = share.Platform,
+                SharedAt = share.SharedAt
             };
         }
 
-        public async Task<IEnumerable<ShareDto>> GetAllAsync()
-        {
-            var shares = await _shareRepository.GetAllAsync();
-
-            return shares.Select(s => new ShareDto
-            {
-                ShareId = s.ShareId,
-                CampaignId = s.CampaignId,
-                GuestName = s.GuestName,
-                ReceiverEmail = s.ReceiverEmail,
-                Platform = s.Platform,
-                SharedAt = s.SharedAt,
-                AccountId = s.AccountId,
-                AccountName = s.Account?.FullName ?? "",
-                CampaignTitle = s.Campaign?.Title ?? ""
-            });
-        }
-
-        public async Task<ShareDto?> GetByIdAsync(int id)
-        {
-            var s = await _shareRepository.GetByIdAsync(id);
-            if (s == null) return null;
-
-            return new ShareDto
-            {
-                ShareId = s.ShareId,
-                CampaignId = s.CampaignId,
-                GuestName = s.GuestName,
-                ReceiverEmail = s.ReceiverEmail,
-                Platform = s.Platform,
-                SharedAt = s.SharedAt,
-                AccountId = s.AccountId,
-                AccountName = s.Account?.FullName ?? "",
-                CampaignTitle = s.Campaign?.Title ?? ""
-            };
-        }
+        #endregion
     }
 }

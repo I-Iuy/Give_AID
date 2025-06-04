@@ -1,4 +1,4 @@
-﻿using Be.DTOs;
+﻿using Be.DTOs.Comment;
 using Be.Services.Comment;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,15 +15,22 @@ namespace Be.Controllers
             _commentService = commentService;
         }
 
-        // Tạo bình luận mới (FE Web)
+        // Create new comment (FE Web)
         [HttpPost]
         public async Task<IActionResult> CreateComment([FromBody] CreateCommentDto dto)
         {
-            await _commentService.AddCommentAsync(dto);
-            return Ok(new { success = true });
+            try
+            {
+                var result = await _commentService.AddCommentAsync(dto);
+                return Ok(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
-        // Lấy danh sách bình luận theo chiến dịch (FE Web)
+        // Get comments by campaign (FE Web)
         [HttpGet("campaign/{campaignId}")]
         public async Task<IActionResult> GetCommentsByCampaign(int campaignId)
         {
@@ -31,7 +38,33 @@ namespace Be.Controllers
             return Ok(result);
         }
 
-        // Xoá comment (Admin)
+        // Get comment by ID
+        [HttpGet("{commentId}")]
+        public async Task<IActionResult> GetByIdAsync(int commentId)
+        {
+            Console.WriteLine($"[BE Controller] Received GetByIdAsync request for ID: {commentId}");
+            try
+            {
+                var result = await _commentService.GetByIdAsync(commentId);
+                Console.WriteLine($"[BE Controller] GetByIdAsync service returned: {System.Text.Json.JsonSerializer.Serialize(result)}");
+
+                if (result == null)
+                {
+                    Console.WriteLine($"[BE Controller] Comment with ID {commentId} not found.");
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[BE Controller] Error in GetByIdAsync for ID {commentId}: {ex.Message}");
+                Console.WriteLine($"[BE Controller] Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { success = false, message = "Internal server error." });
+            }
+        }
+
+        // Delete comment (Admin)
         [HttpDelete("{commentId}")]
         public async Task<IActionResult> Delete(int commentId)
         {
@@ -46,7 +79,7 @@ namespace Be.Controllers
             }
         }
 
-        // Lấy tất cả bình luận cha cho dashboard admin
+        // Get all parent comments for admin dashboard
         [HttpGet("dashboard")]
         public async Task<IActionResult> GetDashboardComments()
         {
@@ -54,7 +87,7 @@ namespace Be.Controllers
             return Ok(result);
         }
 
-        // Trả lời bình luận (Admin)
+        // Reply to comment (Admin)
         [HttpPost("reply")]
         public async Task<IActionResult> ReplyToComment([FromBody] ReplyDto model)
         {
@@ -68,7 +101,7 @@ namespace Be.Controllers
         }
     }
 
-    // ✅ Thêm DTO nội bộ (hoặc đưa vào file riêng)
+    // Internal DTO (or move to separate file)
     public class ReplyDto
     {
         public int CommentId { get; set; }

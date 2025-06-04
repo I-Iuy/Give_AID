@@ -10,10 +10,10 @@ namespace Be.Models
         [Required]
         public int CampaignId { get; set; }
 
-        public int? AccountId { get; set; }           // Người đăng nhập
-        public string? GuestName { get; set; }        // Khách chưa đăng nhập
+        public int? AccountId { get; set; }           // Logged in user
+        public string? GuestName { get; set; }        // Guest user
 
-        public string? ReceiverEmail { get; set; }    // Nếu là Email
+        public string? ReceiverEmail { get; set; }    // For email sharing
 
         [Required]
         public string Platform { get; set; } = "Email"; // Email, Facebook, WhatsApp, etc.

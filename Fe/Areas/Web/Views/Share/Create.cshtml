@@ -9,6 +9,7 @@
     <h2 class="mb-3">Share This Campaign</h2>
 
     <form asp-action="Create" method="post">
+        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
         <input type="hidden" asp-for="CampaignId" />
 
         <div class="mb-3">
@@ -34,7 +35,3 @@
         <button type="submit" class="btn btn-primary">Share Now</button>
     </form>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}

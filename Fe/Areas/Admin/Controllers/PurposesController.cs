@@ -14,17 +14,22 @@ namespace Fe.Areas.Admin.Controllers
         {
             _purposeService = purposeService;
         }
-        [HttpGet]
+
+        // GET: /Admin/Purposes
         public async Task<IActionResult> List()
         {
             var purposes = await _purposeService.GetAllAsync();
             return View(purposes); 
         }
-        [HttpGet]
+
+
+        // GET: /Admin/Purposes/Add
         public IActionResult Add()
         {
             return View();
         }
+
+        // POST: /Admin/Purposes/Add
         [HttpPost]
         public async Task<IActionResult> Add(CreatePurposeDto dto)
         {
@@ -42,6 +47,7 @@ namespace Fe.Areas.Admin.Controllers
             {
                 var errorMessage = ex.Message;
 
+                // Phân loại lỗi để đưa về đúng field
                 if (errorMessage.Contains("already exists", StringComparison.OrdinalIgnoreCase))
                 {
                     ModelState.AddModelError(nameof(dto.Title), "This title already exists.");
@@ -58,7 +64,7 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             }
         }
-        [HttpGet]
+        // GET: /Admin/Purposes/CheckInUse/{id}
         public async Task<IActionResult> CheckInUse(int id)
         {
             try
@@ -71,7 +77,7 @@ namespace Fe.Areas.Admin.Controllers
                 return BadRequest(ex.Message); 
             }
         }
-        [HttpGet]
+        // GET: /Admin/Purposes/Edit/{id}
         public async Task<IActionResult> Edit(int id)
         {
             var purpose = await _purposeService.GetByIdAsync(id);
@@ -89,6 +95,7 @@ namespace Fe.Areas.Admin.Controllers
             return View(dto);
         }
         [HttpPost]
+        // POST: /Admin/Purposes/Edit/{id}
         public async Task<IActionResult> Edit(UpdatePurposeDto dto)
         {
             if (!ModelState.IsValid)
@@ -121,6 +128,8 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             }
         }
+
+        // GET: /Admin/Purposes/Delete/{id}
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {

@@ -26,8 +26,7 @@ namespace Fe.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Reply(int id)
         {
-            var comments = await _commentService.GetAllForDashboardAsync();
-            var comment = comments?.FirstOrDefault(c => c.CommentId == id);
+            var comment = await _commentService.GetByIdAsync(id);
             if (comment == null)
                 return NotFound();
 
@@ -44,7 +43,7 @@ namespace Fe.Areas.Admin.Controllers
                 return RedirectToAction("Reply", new { id });
             }
 
-            await _commentService.ReplyAsync(id, replyContent); 
+            await _commentService.ReplyAsync(id, replyContent);
             return RedirectToAction("Index");
         }
 
@@ -52,7 +51,7 @@ namespace Fe.Areas.Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            await _commentService.DeleteAsync(id); 
+            await _commentService.DeleteAsync(id);
             return RedirectToAction("Index");
         }
     }

@@ -6,6 +6,6 @@ namespace Fe.Services.Share
     {
         Task<IEnumerable<ShareDto>> GetAllAsync();
         Task<ShareDto?> GetByIdAsync(int id);
-        Task<bool> CreateAsync(CreateShareDto dto);
+        Task<bool> ShareCampaignAsync(CreateShareDto dto, string baseUrl);
     }
 }

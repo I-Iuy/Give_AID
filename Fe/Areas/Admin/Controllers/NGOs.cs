@@ -34,21 +34,23 @@ namespace Fe.Areas.Admin.Controllers
                 return NotFound(ex.Message);
             }
         }
-        [HttpGet]
+        // GET: Admin/NGOs
         public async Task<IActionResult> List()
         {
-            var ngos = await _ngoApiService.GetAllAsync(); 
+            var ngos = await _ngoApiService.GetAllAsync(); // Lấy danh sách partner từ API
             return View(ngos);
         }
-        [HttpGet]
+        // GET: /Admin/Ngos/Add
         public IActionResult Add()
         {
             return View();
         }
+        // POST: /Admin/Ngos/Add
         [HttpPost]
         public async Task<IActionResult> Add(CreateNgoDto dto, IFormFile logo)
         {
             ModelState.Remove("LogoUrl");
+            // Kiểm tra logo
             if (logo == null || logo.Length == 0)
             {
                 ModelState.AddModelError(nameof(dto.LogoUrl), "File field is required.");
@@ -66,7 +68,7 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             try
             {
-
+                // Truyền IFormFile trực tiếp vào service
                 await _ngoApiService.AddAsync(dto, logo);
                 return RedirectToAction("List");
             }
@@ -102,7 +104,7 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             }
         }
-        [HttpGet]
+        // GET: /Admin/Partners/CheckInUse/{id}
         public async Task<IActionResult> CheckInUse(int id)
         {
             try
@@ -115,7 +117,7 @@ namespace Fe.Areas.Admin.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        [HttpGet]
+        // GET: /Admin/Ngos/Edit/{id}
         public async Task<IActionResult> Edit(int id)
         {
             var ngo = await _ngoApiService.GetByIdAsync(id);
@@ -154,6 +156,7 @@ namespace Fe.Areas.Admin.Controllers
                     hasFileErrors = true;
                 }
             }
+            // Nếu có lỗi file, trả về view ngay
             if (hasFileErrors)
                 return View(dto);
             try
@@ -194,6 +197,7 @@ namespace Fe.Areas.Admin.Controllers
             }
 
         }
+        // GET: /Admin/Ngos/Delete/{id}
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {

@@ -27,7 +27,7 @@ namespace Fe.Areas.Admin.Controllers
         {
             try
             {
-                var stream = _partnerService.GetLogoFileStream(logoUrl);
+                var stream = _partnerService.GetLogoFileStream(logoUrl); // gọi hàm từ service
                 var contentType = Path.GetExtension(logoUrl).ToLower() switch
                 {
                     ".png" => "image/png",
@@ -42,6 +42,7 @@ namespace Fe.Areas.Admin.Controllers
                 return NotFound(ex.Message);
             }
         }
+
         [HttpGet("Admin/Partners/Contract")]
         public IActionResult GetContract(string fileUrl)
         {
@@ -66,22 +67,27 @@ namespace Fe.Areas.Admin.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        [HttpGet]
+
+        // GET: /Admin/Partners
         public async Task<IActionResult> List()
         {
-            var partners = await _partnerService.GetAllAsync(); 
+            var partners = await _partnerService.GetAllAsync(); // Lấy danh sách partner từ API
             return View(partners);
         }
-        [HttpGet]
+
+        // GET: /Admin/Partners/Add
         public IActionResult Add()
         {
             return View();
         }
+
+        // POST: /Admin/Partners/Add
         [HttpPost]
         public async Task<IActionResult> Add(CreatePartnerDto dto, IFormFile logo, IFormFile contract)
         {
             RemoveFileFieldsFromModelState();
 
+            // Kiểm tra logo
             if (logo == null || logo.Length == 0)
             {
                 ModelState.AddModelError(nameof(dto.LogoUrl), "File field is required.");
@@ -96,6 +102,7 @@ namespace Fe.Areas.Admin.Controllers
                     ModelState.AddModelError(nameof(dto.LogoUrl), "Logo must be smaller than 500KB.");
             }
 
+            // Kiểm tra file hợp đồng
             if (contract == null || contract.Length == 0)
             {
                 ModelState.AddModelError(nameof(dto.ContractFile), "File field is required.");
@@ -115,6 +122,7 @@ namespace Fe.Areas.Admin.Controllers
 
             try
             {
+                // Truyền IFormFile trực tiếp vào service
                 await _partnerService.AddAsync(dto, logo, contract);
                 return RedirectToAction("List");
             }
@@ -132,7 +140,9 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             }
         }
-        [HttpGet]
+
+
+        // GET: /Admin/Partners/CheckInUse/{id}
         public async Task<IActionResult> CheckInUse(int id)
         {
             try
@@ -145,7 +155,8 @@ namespace Fe.Areas.Admin.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        [HttpGet]
+
+        // GET: /Admin/Partners/Edit/{id}
         public async Task<IActionResult> Edit(int id)
         {
             var partner = await _partnerService.GetByIdAsync(id); 
@@ -200,6 +211,7 @@ namespace Fe.Areas.Admin.Controllers
                 }
             }
 
+            // Nếu có lỗi file, trả về view ngay
             if (hasFileErrors)
                 return View(dto);
        
@@ -222,6 +234,9 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             }
         }
+
+
+        // GET: /Admin/Partners/Delete/{id}
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {

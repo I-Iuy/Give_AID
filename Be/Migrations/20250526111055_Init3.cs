@@ -11,23 +11,23 @@ namespace Be.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "Campaigns",
-                columns: table => new
-                {
-                    CampaignId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    EventDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    AccountId = table.Column<int>(type: "int", nullable: false),
-                    PurposeId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Campaigns", x => x.CampaignId);
-                });
+            // migrationBuilder.CreateTable(
+            //     name: "Campaigns",
+            //     columns: table => new
+            //     {
+            //         CampaignId = table.Column<int>(type: "int", nullable: false)
+            //             .Annotation("SqlServer:Identity", "1, 1"),
+            //         Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //         Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //         VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //         EventDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+            //         AccountId = table.Column<int>(type: "int", nullable: false),
+            //         PurposeId = table.Column<int>(type: "int", nullable: false)
+            //     },
+            //     constraints: table =>
+            //     {
+            //         table.PrimaryKey("PK_Campaigns", x => x.CampaignId);
+            //     });
 
             migrationBuilder.CreateTable(
                 name: "CampaignNgos",

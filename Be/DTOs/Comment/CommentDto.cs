@@ -1,8 +1,6 @@
-﻿
+﻿using Be.Controllers;
 
-using Be.Controllers;
-
-namespace Be.DTOs
+namespace Be.DTOs.Comment
 {
     public class CommentDto
     {

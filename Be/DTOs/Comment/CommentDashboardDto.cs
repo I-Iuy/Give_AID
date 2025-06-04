@@ -1,4 +1,5 @@
-﻿namespace Be.DTOs
+﻿namespace Be.DTOs.Comment
+
 {
     public class CommentDashboardDto
     {

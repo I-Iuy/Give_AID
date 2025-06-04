@@ -1,7 +1,6 @@
 using Fe.Services.Ngos;
-﻿using Fe.Services.Campaigns;
+using Fe.Services.Campaigns;
 using Fe.Services.Getdata;
-using Fe.Services.Ngos;
 using Fe.Services.Partners;
 using Fe.Services.Purposes;
 using Fe.Services.Comment;
@@ -19,6 +18,7 @@ builder.Services.AddHttpClient<ICommentService, CommentService>(client =>
 });
 builder.Services.AddScoped<Fe.Services.Share.IShareService, Fe.Services.Share.ShareService>();
 builder.Services.AddScoped<Fe.Services.Notification.INotificationService, Fe.Services.Notification.NotificationService>();
+
 
 // ✅ Đăng ký PurposeService (nếu có)
 builder.Services.AddScoped<IPurposeApiService, PurposeApiService>();
@@ -39,6 +39,12 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseAuthorization();
+
+// Routing cụ thể cho các controller trong Area Admin
+app.MapControllerRoute(
+    name: "admin_controllers",
+    pattern: "{area:exists}/{controller}/{action}/{id?}",
+    defaults: new { area = "Admin" });
 
 // Routing cho khu vực có Area (ví dụ: /Admin/Purpose/Create)
 app.MapControllerRoute(

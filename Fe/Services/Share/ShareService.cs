@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Fe.Services.Share
 {
@@ -29,8 +30,47 @@ namespace Fe.Services.Share
 
         public async Task<bool> CreateAsync(CreateShareDto dto)
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/share", dto);
-            return response.IsSuccessStatusCode;
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/share/sharecampaign", dto);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<dynamic>(content);
+                    return true;
+                }
+                
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Failed to share campaign: {errorContent}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error sharing campaign: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> ShareCampaignAsync(CreateShareDto dto, string baseUrl)
+        {
+            try
+            {
+                dto.BaseUrl = baseUrl;
+                var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/share/sharecampaign", dto);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<dynamic>(content);
+                    return true;
+                }
+                
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Failed to share campaign: {errorContent}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error sharing campaign: {ex.Message}", ex);
+            }
         }
     }
 }

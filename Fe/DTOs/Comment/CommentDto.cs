@@ -14,5 +14,6 @@
         public int? ParentCommentId { get; set; }
 
         public bool IsReplied { get; set; }
+        public List<CommentDto>? Replies { get; set; }
     }
 }

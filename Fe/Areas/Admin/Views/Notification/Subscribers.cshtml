@@ -32,6 +32,19 @@
         </div>
     </div>
 
+    <!-- ✅ New Button: Send Latest Campaign Notification -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="latestCampaignForm">
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-warning">
+                        Send Notification for Latest Campaign
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ✅ List of Subscribed Users -->
     <div class="card">
         <div class="card-body">
@@ -74,6 +87,7 @@
 
 @section Scripts {
     <script>
+        // Existing form: send custom notification
         document.getElementById('bulkNotificationForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
@@ -109,6 +123,29 @@
                 alert.classList.remove('d-none');
                 alert.classList.add('alert-danger');
                 alert.textContent = 'An error occurred while sending the notification.';
+            }
+        });
+
+        // New form: send latest campaign notification
+        document.getElementById('latestCampaignForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            try {
+                const response = await fetch('/Admin/Notification/SendLatestCampaign', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                const alert = document.getElementById('resultAlert');
+
+                alert.classList.remove('d-none', 'alert-success', 'alert-danger');
+                alert.classList.add(result.success ? 'alert-success' : 'alert-danger');
+                alert.textContent = result.message;
+            } catch (error) {
+                const alert = document.getElementById('resultAlert');
+                alert.classList.remove('d-none');
+                alert.classList.add('alert-danger');
+                alert.textContent = 'An error occurred while sending the latest campaign.';
             }
         });
     </script>

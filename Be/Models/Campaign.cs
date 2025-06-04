@@ -12,8 +12,12 @@ namespace Be.Models
         public DateTime EventDate { get; set; }
         public int AccountId { get; set; } // FK
         public int PurposeId { get; set; } // FK
+
+        // Navigation properties
+        public Account Account { get; set; }
+        public Purpose Purpose { get; set; }
         public ICollection<CampaignNgo> CampaignNgos { get; set; }
         public ICollection<CampaignPartner> CampaignPartners { get; set; }
-
+        public ICollection<Comment> Comments { get; set; }
     }
 }

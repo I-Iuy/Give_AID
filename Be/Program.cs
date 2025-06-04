@@ -22,42 +22,46 @@ using Be.Services.ShareService;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Kết nối DB
+// Database connection
 builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")));
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-//Đăng ký Purpose
+
+// Register Purpose services
 builder.Services.AddScoped<IPurposeRepository, PurposeRepository>();
 builder.Services.AddScoped<IPurposeService, PurposeService>();
-//Đăng ký Partner
+
+// Register Partner services
 builder.Services.AddScoped<IPartnerRepository, PartnerRepository>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
-//Đăng ký NGO
+
+// Register NGO services
 builder.Services.AddScoped<INgoRepository, NgoRepository>();
 builder.Services.AddScoped<INgoService, NgoService>();
-//Đăng ký Campaign
+
+// Register Campaign services
 builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 
-//  ĐĂNG KÝ REPOSITORIES
+// Register Repositories
 builder.Services.AddScoped<IPurposeRepository, PurposeRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IShareRepository, ShareRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
-//ĐĂNG KÝ SERVICES
+// Register Services
 builder.Services.AddScoped<IPurposeService, PurposeService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IShareService, ShareService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
-//EMAIL SERVICE
+// Register Email Service
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-//Đăng ký CampaignUsage
+// Register Campaign Usage services
 builder.Services.AddScoped<ICampaignUsageRepository, CampaignUsageRepository>();
 builder.Services.AddScoped<ICampaignUsageService, CampaignUsageService>();
 

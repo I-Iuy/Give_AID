@@ -68,7 +68,7 @@
                         const data = await response.json();
 
                         if (data.isUsed) {
-                            const confirmed = confirm("Purpose is in use. Editing the title will affect related campaigns. Do you want to proceed?");
+                            const confirmed = confirm("Purpose is in use. Editing the title will affect related campaigns!");
                             if (!confirmed) return;
                         }
 

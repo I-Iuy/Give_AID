@@ -1,13 +1,14 @@
-﻿using Be.DTOs;
+﻿using Be.DTOs.Comment;
 
 namespace Be.Services.Comment
 {
     public interface ICommentService
     {
-        Task AddCommentAsync(CreateCommentDto dto);
+        Task<CommentDto> AddCommentAsync(CreateCommentDto dto);
         Task<IEnumerable<CommentDto>> GetCommentsByCampaignAsync(int campaignId);
-        Task<IEnumerable<CommentDashboardDto>> GetAllForDashboardAsync(); // cần cho dashboard
-        Task ReplyToCommentAsync(int commentId, string replyContent);     // ✅ thêm dòng này
-        Task DeleteCommentAsync(int commentId);                           // ✅ thêm dòng này
+        Task DeleteCommentAsync(int commentId);
+        Task ReplyToCommentAsync(int commentId, string replyContent);
+        Task<IEnumerable<CommentDashboardDto>> GetAllForDashboardAsync();
+        Task<CommentDto?> GetByIdAsync(int commentId);
     }
 }

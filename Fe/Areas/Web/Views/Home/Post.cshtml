@@ -1,77 +1,79 @@
-﻿@model Fe.Areas.Web.Controllers.HomeController.FeatureCard
-
+﻿@using Fe.DTOs.Comment
+@using System.Collections.Generic
+@using System.Linq
+@{
+    var comments = ViewBag.Comments as List<CommentDto> ?? new List<CommentDto>();
+    // Debug info
+    System.Diagnostics.Debug.WriteLine($"Comments count: {comments.Count}");
+    foreach (var comment in comments)
+    {
+        System.Diagnostics.Debug.WriteLine($"Comment: {System.Text.Json.JsonSerializer.Serialize(comment)}");
+    }
+}
+@model Fe.Areas.Web.Controllers.HomeController.FeatureCard
+@* OpenGraph *@
+@section MetaTags {
+    <meta property="og:title" content="@Model.Title" />
+    <meta property="og:description" content="@Model.Description" />
+    <meta property="og:image" content="@Model.ImageUrl" />
+    <meta property="og:url" content="https://fe.charityhub.org/Web/Home/Post/@Model.CampaignId" />
+}
 @{
     ViewData["Title"] = Model.Title;
     Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
-    @if (TempData["SuccessMessage"] != null)
+
+    var purposes = ViewBag.Purposes as IEnumerable<Fe.DTOs.Purposes.PurposeDto> ?? new List<Fe.DTOs.Purposes.PurposeDto>();
+    var topPurposes = purposes.Take(4).ToList();
+    var remainingPurposes = purposes.Skip(4).ToList();
+    var topChunks = topPurposes.Chunk(2).ToArray();
+    var allChunks = purposes.Chunk((int)Math.Ceiling(purposes.Count() / 2.0)).ToArray();
+    if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success">@TempData["SuccessMessage"]</div>
     }
-    @if (TempData["ErrorMessage"] != null)
+    if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
     }
-
-}
-
-@using Fe.DTOs.Comment
-@{
-    var comments = ViewBag.Comments as List<CommentDto>;
 }
 
 <!-- Page content-->
 <div class="container mt-5">
     <div class="row">
         <div class="col-lg-8">
-            <!-- Post content-->
+            <!-- Post content -->
             <article>
-                <!-- Post header-->
+                <!-- Header -->
                 <header class="mb-4">
-                    <h1 class="fw-bolder mb-1">@Model.Title</h1>
-
+                    <h1 class="fw-bold text-primary mb-2">@Model.Title</h1>
                     <!-- ✅ Share button here -->
-                    <div class="d-flex align-items-center gap-2 mt-2">
-                        <button class="btn btn-sm btn-outline-secondary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#shareModal"
-                                data-campaign-id="@Model.Id"
-                                data-campaign-title="@Model.Title">
-                            <i class="bi bi-share-fill me-1"></i> Share This Campaign
-                        </button>
-                    </div>
-
-                    <ol class="breadcrumb mb-4 mt-3">
-                        <li class="breadcrumb-item">
-                            <a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        @if (ViewBag.ReturnToAll == true)
-                        {
-                            <li class="breadcrumb-item">
-                                <a asp-area="Web" asp-controller="Home" asp-action="AllCampaigns">All Campaigns</a>
-                            </li>
-                        }
-                        <li class="breadcrumb-item active">@Model.Title</li>
-                    </ol>
-                    <div class="text-muted fst-italic mb-2">Posted on January 1, 2023 by NGO Platform</div>
-                    <a class="badge bg-danger text-decoration-none link-light" href="#">@Model.Cause</a>
+<div class="d-flex align-items-center gap-2 mt-2">
+    <button class="btn btn-sm btn-outline-secondary"
+            data-bs-toggle="modal"
+            data-bs-target="#shareModal"
+            data-campaign-id="@Model.CampaignId"
+            data-campaign-title="@Model.Title">
+        <i class="bi bi-share-fill me-1"></i> Share This Campaign
+    </button>
+</div>
+                    <p class="text-muted mb-1">
+                        <i class="bi bi-calendar-event me-1"></i> Posted on @DateTime.Now.ToString("MMMM dd, yyyy") by NGO Platform
+                    </p>
+                    <span class="badge bg-danger mb-3">@Model.Cause</span>
                 </header>
 
+                <!-- Image -->
                 <figure class="mb-4">
-                    <img class="img-fluid rounded" src="https://dummyimage.com/900x400/ced4da/6c757d.jpg" alt="Post Banner" />
+                    <img src="@Model.ImageUrl" alt="@Model.Title" width="100%" height="380" class="rounded" />
                 </figure>
 
-                <section class="mb-5">
-                    <p class="fs-5 mb-4">@Model.Description</p>
-                    <p class="fs-5 mb-4">The universe is large and old, and the ingredients for life as we know it are everywhere...</p>
-                    <p class="fs-5 mb-4">If you get asteroids about a kilometer in size...</p>
-
-                    <h2 class="fw-bolder mb-4 mt-5">We Believe in Change</h2>
-                    <p class="fs-5 mb-4">Sharing knowledge, providing aid, and building sustainable systems...</p>
-                    <p class="fs-5 mb-4">Every contribution matters — whether it’s time, money, or effort...</p>
+                <!-- Content -->
+                <section class="mb-5 content-style">
+                    @Html.Raw(Model.Description)
                 </section>
             </article>
 
-            <!-- Post partners & NGOs-->
+            <!-- Collaborators -->
             @if ((Model.Partners?.Any() ?? false) || (Model.NGOs?.Any() ?? false))
             {
                 <section class="mb-5">
@@ -119,111 +121,69 @@
             <section class="mb-5">
                 <div class="card bg-light">
                     <div class="card-body">
-                        <!-- Comment form -->
-                        <form class="mb-4" asp-area="Web" asp-controller="Comment" asp-action="Create" method="post">
-                            <input type="hidden" name="CampaignId" value="@Model.Id" />
-                            <textarea class="form-control mb-2" name="Content" rows="3" placeholder="Write your comment here..." required></textarea>
+                        <div id="messageContainer"></div>
+                        
+                        <form id="commentForm" class="mb-4" asp-area="Web" asp-controller="Comment" asp-action="Create" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="CampaignId" value="@Model.CampaignId" />
+                            <div class="form-group mb-3">
+                                <textarea class="form-control" name="Content" rows="3" placeholder="Write your comment here..." required></textarea>
+                            </div>
 
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" name="IsAnonymous" id="anonymousCheck" />
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="IsAnonymous" id="anonymousCheck" value="true" />
                                 <label class="form-check-label" for="anonymousCheck">Post anonymously</label>
                             </div>
 
-                            @if (!User.Identity.IsAuthenticated)
-                            {
-                                <div class="mb-2">
-                                    <input name="GuestName" class="form-control" placeholder="Your name (optional if not anonymous)">
-                                </div>
-                            }
+                            <div id="guestNameGroup" class="form-group mb-3" style="display: none;">
+                                <input name="GuestName" class="form-control" placeholder="Your name (required for anonymous comments)" />
+                            </div>
 
-                            <button type="submit" class="btn btn-primary">Submit Comment</button>
+                            <button type="submit" class="btn btn-primary" id="submitButton">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Submit Comment
+                            </button>
                         </form>
 
-                        <!-- Comment list -->
-                        @if (comments != null && comments.Any())
-                        {
-                            foreach (var comment in comments)
+                        <div id="commentsList">
+                            @if (comments.Any())
                             {
-                                <div class="d-flex mb-4">
-                                    <div class="ms-3">
-                                        <div class="fw-bold">
-                                            @(comment.IsAnonymous ? "Anonymous" : (comment.GuestName ?? "Guest"))
-                                            <span class="text-muted small">– @comment.CommentedAt.ToString("dd/MM/yyyy HH:mm")</span>
-                                        </div>
-                                        <p>@comment.Content</p>
-
-                                        @if (comment.IsReplied)
-                                        {
-                                            <div class="mt-2 ms-4 p-2 border rounded bg-light">
-                                                <div class="fw-bold text-primary">Admin Reply:</div>
-                                                <div class="fst-italic text-muted">This comment has been responded to by the administrator.</div>
+                                foreach (var comment in comments)
+                                {
+                                    <div class="d-flex mb-4">
+                                        <div class="ms-3">
+                                            <div class="fw-bold">
+                                                @(comment.IsAnonymous ? "Anonymous" : (comment.GuestName ?? "Guest"))
+                                                <span class="text-muted small">– @comment.CommentedAt.ToString("dd/MM/yyyy HH:mm")</span>
                                             </div>
-                                        }
+                                            <p>@comment.Content</p>
+
+                                            @if (comment.Replies != null && comment.Replies.Any())
+                                            {
+                                                foreach (var reply in comment.Replies)
+                                                {
+                                                    <div class="mt-2 ms-4 p-2 border rounded bg-light">
+                                                        <div class="fw-bold text-primary">@reply.GuestName:</div>
+                                                        <div class="text-muted small">@reply.CommentedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                                        <p>@reply.Content</p>
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
                                     </div>
-                                </div>
+                                }
                             }
-                        }
-                        else
-                        {
-                            <p class="text-muted">There are no comments for this campaign yet.</p>
-                        }
+                            else
+                            {
+                                <p class="text-muted">There are no comments for this campaign yet.</p>
+                            }
+                        </div>
                     </div>
                 </div>
             </section>
             <!-- COMMENT SECTION END -->
         </div>
-
-        <!-- Side widgets-->
-        <div class="col-lg-4">
-            <div class="sticky-top" style="top: 80px;">
-                @Html.Partial("_SupportPurpose")
-                @Html.Partial("_UrgentProgramsWidget")
-
-                <!-- Interest Subscription Widget -->
-                <!-- Interest Subscription Widget -->
-                <div class="card mb-4">
-                    <div class="card-header">Stay Informed</div>
-                    <div class="card-body">
-                        <p class="mb-3">Would you like to receive updates about future programs?</p>
-
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <form asp-area="Web" asp-controller="Notification" asp-action="Subscribe" method="post">
-                                <button type="submit" class="btn btn-outline-primary w-100">
-                                    <i class="bi bi-bell-fill"></i> Get Notifications
-                                </button>
-                            </form>
-                        }
-                        else
-                        {
-                            <a class="btn btn-outline-secondary w-100" href="/Account/Login">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Login to Subscribe
-                            </a>
-                        }
-                    </div>
-                </div>
-
-
-                <!-- Donate Widget -->
-                <div class="card mb-4">
-                    <div class="card-header">Make a Difference</div>
-                    <div class="card-body">
-                        <p class="mb-2">Would you like to donate to the <strong>@ViewBag.Title</strong> program?</p>
-                        <a class="btn btn-outline-danger w-100"
-                           data-bs-toggle="modal"
-                           data-bs-target="#donationFilterModal"
-                           data-selected-cause="@Model.Cause"
-                           data-program-title="@Model.Title">
-                            <i class="bi bi-heart-fill me-1"></i> Donate Now
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Share Modal -->
+        <!-- Share Modal -->
 <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -264,13 +224,294 @@
     </div>
 </div>
 
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 80px;">
+                @if (purposes.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">Support Purpose</div>
+                        <div class="card-body">
+                            <div class="row">
+                                @for (int i = 0; i < topChunks.Length; i++)
+                                {
+                                    <div class="col-sm-6">
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var purpose in topChunks[i])
+                                            {
+                                                <a class="list-group-item list-group-item-action"
+                                                   asp-area="Web"
+                                                   asp-controller="Home"
+                                                   asp-action="AllCampaigns"
+                                                   asp-route-category="@purpose.Title">
+                                                    @purpose.Title
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (remainingPurposes.Any())
+                            {
+                                <button class="btn btn-link mt-3 px-0" data-bs-toggle="modal" data-bs-target="#allPurposeModal">
+                                    <i class="bi bi-list-ul me-1"></i> View More
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @{
+                    var urgentCampaigns = ViewBag.UrgentCampaigns as List<Fe.DTOs.Campaigns.CampaignDto> ?? new();
+                }
+                @if (urgentCampaigns.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">Urgent Support Programs</div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var campaign in urgentCampaigns)
+                            {
+                                <li class="list-group-item">
+                                    <a asp-area="Web"
+                                       asp-controller="Home"
+                                       asp-action="Post"
+                                       asp-route-id="@campaign.CampaignId"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @campaign.Title
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+
+                <div class="card mb-4">
+                    <div class="card-header">Stay Informed</div>
+                    <div class="card-body">
+                        <p class="mb-3">Would you like to receive updates about future programs?</p>
+                        <a class="btn btn-outline-primary w-100" href="#">
+                            <i class="bi bi-bell-fill"></i> Get Notifications
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">Make a Difference</div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            You can bring <strong>@Model.Title</strong> to life. Every small donation counts toward something bigger.
+                        </p>
+                        <a class="btn btn-outline-danger w-100"
+                           data-bs-toggle="modal"
+                           data-bs-target="#donationFilterModal"
+                           data-selected-cause="@Model.Cause"
+                           data-program-title="@Model.Title">
+                            <i class="bi bi-heart-fill me-1"></i> Donate Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: All Purposes -->
+@if (remainingPurposes.Any())
+{
+    <div class="modal fade" id="allPurposeModal" tabindex="-1" aria-labelledby="allPurposeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="allPurposeModalLabel">All Purposes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        @for (int i = 0; i < allChunks.Length; i++)
+                        {
+                            <div class="col-sm-6">
+                                <div class="list-group list-group-flush mb-3">
+                                    @foreach (var purpose in allChunks[i])
+                                    {
+                                        <a class="list-group-item list-group-item-action"
+                                           asp-area="Web"
+                                           asp-controller="Home"
+                                           asp-action="AllCampaigns"
+                                           asp-route-category="@purpose.Title"
+                                           data-bs-dismiss="modal">
+                                            @purpose.Title
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Custom CSS -->
+<style>
+    .content-style h2, .content-style h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .content-style img {
+        max-width: 100%;
+        border-radius: .5rem;
+        margin: 1rem 0;
+    }
+
+    .content-style p {
+        line-height: 1.8;
+    }
+
+    .btn-link {
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('#allPurposeModal a[data-bs-dismiss="modal"]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const targetUrl = this.href;
+
+                // Get current modal
+                const modalEl = document.getElementById('allPurposeModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+
+                // Hide modal
+                modalInstance.hide();
+
+                // Wait for modal to close (fade animation), then redirect
+                setTimeout(() => {
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                    window.location.href = targetUrl;
+                }, 400); // Bootstrap default animation timeout is 300ms
+            });
+        });
+    });
+</script>
 @section Scripts {
     <script>
-        const shareModal = document.getElementById('shareModal');
-        shareModal.addEventListener('show.bs.modal', event => {
-            const button = event.relatedTarget;
-            const campaignId = button.getAttribute('data-campaign-id');
-            document.getElementById('modalCampaignId').value = campaignId;
+        $(document).ready(function() {
+            // Handle anonymous checkbox
+            $('#anonymousCheck').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#guestNameGroup').show();
+                    $('#guestNameGroup input').prop('required', true);
+                } else {
+                    $('#guestNameGroup').hide();
+                    $('#guestNameGroup input').prop('required', false);
+                }
+            });
+
+            // Handle form submit
+            $('#commentForm').submit(function(e) {
+                e.preventDefault();
+                
+                const submitButton = $('#submitButton');
+                const spinner = submitButton.find('.spinner-border');
+                const messageContainer = $('#messageContainer');
+                
+                // Clear previous messages
+                messageContainer.empty();
+                
+                // Disable button and show spinner
+                submitButton.prop('disabled', true);
+                spinner.removeClass('d-none');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        console.log('Response:', response); // Debug log
+                        
+                        if (response.success) {
+                            // Remove "no comments" message if exists
+                            $('#commentsList p.text-muted').remove();
+                            
+                            // Add new comment to the top of the list
+                            $('#commentsList').prepend(response.html);
+                            
+                            // Reset form
+                            $('#commentForm')[0].reset();
+                            $('#guestNameGroup').hide();
+                            
+                            // Show success message
+                            messageContainer.html(
+                                '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                                'Comment posted successfully!' +
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                                '</div>'
+                            );
+                        } else {
+                            // Show error message
+                            messageContainer.html(
+                                '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                                (response.message || 'An error occurred while posting your comment.') +
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                                '</div>'
+                            );
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', xhr.responseText); // Debug log
+                        
+                        // Show error message
+                        messageContainer.html(
+                            '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                            'An error occurred while posting your comment. Please try again.' +
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                            '</div>'
+                        );
+                    },
+                    complete: function() {
+                        // Enable button and hide spinner
+                        submitButton.prop('disabled', false);
+                        spinner.addClass('d-none');
+                    }
+                });
+            });
+        });
+    </script>
+    <script>
+        var shareModal = document.getElementById('shareModal');
+        shareModal.addEventListener('show.bs.modal', function (event) {
+            // Button that triggered the modal
+            var button = event.relatedTarget;
+            // Extract info from data-bs-* attributes
+            var campaignId = button.getAttribute('data-campaign-id');
+            var campaignTitle = button.getAttribute('data-campaign-title'); // Also get title if needed
+
+            // Update the modal's content
+            var modalCampaignIdInput = shareModal.querySelector('#modalCampaignId');
+            // var modalTitle = shareModal.querySelector('.modal-title'); // Example if you want to update title
+
+            if (modalCampaignIdInput) {
+                modalCampaignIdInput.value = campaignId;
+            }
+            // if (modalTitle) {
+            //     modalTitle.textContent = 'Share: ' + campaignTitle;
+            // }
         });
     </script>
 }

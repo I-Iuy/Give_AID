@@ -28,6 +28,30 @@ namespace Be.Models
             modelBuilder.Entity<CampaignNgo>()
                 .HasKey(pn => new { pn.CampaignId, pn.NgoId });
 
+            // Configure Comment entity
+            modelBuilder.Entity<Comment>()
+                .Property(c => c.CommentId)
+                .ValueGeneratedOnAdd(); // Configure CommentId as identity
+
+            // Configure Comment relationships
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.Campaign)
+                .WithMany(c => c.Comments)
+                .HasForeignKey(c => c.CampaignId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.ParentComment)
+                .WithMany(c => c.Replies)
+                .HasForeignKey(c => c.ParentCommentId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent circular cascade delete
+
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.Account)
+                .WithMany()
+                .HasForeignKey(c => c.AccountId)
+                .OnDelete(DeleteBehavior.SetNull); // Set AccountId to null if Account is deleted
+
             base.OnModelCreating(modelBuilder);
         }
         public DbSet<Account> Accounts { get; set; }

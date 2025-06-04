@@ -22,7 +22,7 @@ namespace Fe.Areas.Admin.Controllers
             _config = config;
         }
 
-        // ✅ 1. Hiển thị danh sách người dùng đã subscribe
+        // ✅ 1. Display subscriber list
         [HttpGet]
         public async Task<IActionResult> Subscribers()
         {
@@ -39,7 +39,7 @@ namespace Fe.Areas.Admin.Controllers
             return View(result ?? new List<UserNotificationDto>());
         }
 
-        // ✅ 2. Gửi đồng loạt thông báo
+        // ✅ 2. Send bulk notification
         [HttpPost]
         public async Task<IActionResult> SendBulk(BulkNotificationDto dto)
         {
@@ -55,7 +55,7 @@ namespace Fe.Areas.Admin.Controllers
             });
         }
 
-        // ✅ 3. Lịch sử tất cả các thông báo (không lọc campaign)
+        // ✅ 3. Notification history
         [HttpGet]
         public async Task<IActionResult> History()
         {
@@ -64,7 +64,7 @@ namespace Fe.Areas.Admin.Controllers
 
             if (!response.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = "Could not load notifications.";
+                TempData["ErrorMessage"] = "Failed to load notification history.";
                 return View(new List<UserNotificationDto>());
             }
 
@@ -72,7 +72,7 @@ namespace Fe.Areas.Admin.Controllers
             return View(result ?? new List<UserNotificationDto>());
         }
 
-        // ✅ 4. Lọc theo campaignId
+        // ✅ 4. Notifications by campaign
         [HttpGet]
         public async Task<IActionResult> ByCampaign(int campaignId)
         {
@@ -81,13 +81,43 @@ namespace Fe.Areas.Admin.Controllers
 
             if (!response.IsSuccessStatusCode)
             {
-                TempData["ErrorMessage"] = "Could not load campaign notifications.";
+                TempData["ErrorMessage"] = "Failed to load campaign notifications.";
                 return View(new List<UserNotificationDto>());
             }
 
             var result = await response.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
             ViewBag.CampaignId = campaignId;
             return View(result ?? new List<UserNotificationDto>());
+        }
+
+        // ✅ 5. Send the latest campaign as notification
+        [HttpPost]
+        public async Task<IActionResult> SendLatestCampaign()
+        {
+            var latest = await _notificationService.GetLatestCampaignFromApi();
+            if (latest == null)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "No campaign found."
+                });
+            }
+
+            var dto = new BulkNotificationDto
+            {
+                Title = latest.Title,
+                Message = latest.Content,
+                CampaignId = latest.CampaignId
+            };
+
+            var success = await _notificationService.SendBulkAsync(dto);
+
+            return Json(new
+            {
+                success,
+                message = success ? "Latest campaign notification sent successfully." : "Failed to send latest campaign notification."
+            });
         }
     }
 }
