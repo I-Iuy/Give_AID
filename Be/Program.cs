@@ -1,9 +1,11 @@
 ﻿using Be.Models;
 using Be.Repositories.Campaigns;
+using Be.Repositories.CampaignsUsage;
 using Be.Repositories.Ngos;
 using Be.Repositories.Partners;
 using Be.Repositories.Purposes;
 using Be.Services.Campaigns;
+using Be.Services.CampaignUsage;
 using Be.Services.Ngos;
 using Be.Services.Partners;
 using Be.Repositories.CommentRepo;
@@ -12,7 +14,6 @@ using Be.Repositories.Purposes;
 using Be.Repositories.ShareRepo;
 using Be.Services.Comment;
 using Be.Services.EmailService;
-
 using Be.Services.Purposes;
 using Microsoft.EntityFrameworkCore;
 using Be.Services.NotificationService;
@@ -42,7 +43,6 @@ builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 
 //  ĐĂNG KÝ REPOSITORIES
-
 builder.Services.AddScoped<IPurposeRepository, PurposeRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IShareRepository, ShareRepository>();
@@ -56,6 +56,11 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 
 //EMAIL SERVICE
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+//Đăng ký CampaignUsage
+builder.Services.AddScoped<ICampaignUsageRepository, CampaignUsageRepository>();
+builder.Services.AddScoped<ICampaignUsageService, CampaignUsageService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

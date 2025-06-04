@@ -1,4 +1,6 @@
-﻿namespace Be.DTOs.Share
+using System;
+
+namespace Be.DTOs.Share
 {
     public class ShareDto
     {

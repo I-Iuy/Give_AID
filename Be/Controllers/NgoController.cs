@@ -1,8 +1,7 @@
 ﻿using Be.Dtos.Ngos;
+using Be.Services.CampaignUsage;
 using Be.Services.Ngos;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 
 namespace Be.Controllers
 {
@@ -11,21 +10,19 @@ namespace Be.Controllers
     public class NgoController : ControllerBase
     {
         private readonly INgoService _service;
+        private readonly ICampaignUsageService _usageService;
 
-        public NgoController(INgoService service)
+        public NgoController(INgoService service, ICampaignUsageService usageService)
         {
             _service = service;
+            _usageService = usageService;
         }
-
-        // GET: api/ngo
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
-
-        // GET: api/ngo/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -33,8 +30,6 @@ namespace Be.Controllers
             if (result == null) return NotFound();
             return Ok(result);
         }
-
-        // POST: api/ngo
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateNgoDto dto)
         {
@@ -52,8 +47,12 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
-        // PUT: api/ngo
+        [HttpGet("{id}/is-used")]
+        public async Task<IActionResult> IsNgoUsed(int id)
+        {
+            bool isUsed = await _usageService.IsNgoUsedAsync(id);
+            return Ok(new { isUsed });
+        }
         [HttpPut]
         public async Task<IActionResult> Edit([FromBody] UpdateNgoDto dto)
         {
@@ -71,13 +70,18 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
-        // DELETE: api/ngo/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _service.DeleteAsync(id);
-            return Ok("NGO deleted successfully.");
+            try
+            {
+                await _service.DeleteAsync(id);
+                return Ok("NGO deleted successfully.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
     }
 }

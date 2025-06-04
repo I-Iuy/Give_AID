@@ -5,11 +5,11 @@ namespace Be.Models
     public class Partner
     {
         [Key]
-        public int PartnerId { get; set; } // tự động tăng
+        public int PartnerId { get; set; } // PK, auto-increment
         public string Name { get; set; }
-        public string LogoUrl { get; set; } // Upload hình ảnh logo .png, .svg, < 500KB
-        public string ContractFile { get; set; } // Upload file .docx, .pdf, < 5MB
-        public int AccountId { get; set; } // khóa ngoại
+        public string LogoUrl { get; set; } // Upload Img Logo .png, .svg, < 500KB
+        public string ContractFile { get; set; } // Upload File .docx, .pdf, < 5MB
+        public int AccountId { get; set; } // FK
 
     }
 }

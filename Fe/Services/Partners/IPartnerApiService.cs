@@ -1,7 +1,4 @@
 ﻿using Fe.DTOs.Partners;
-using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Fe.Services.Partners
 {
@@ -12,6 +9,7 @@ namespace Fe.Services.Partners
         FileStream GetLogoFileStream(string logoUrl);
         FileStream GetContractFileStream(string contractFileUrl);
         Task AddAsync(CreatePartnerDto dto, IFormFile logo, IFormFile contract);
+        Task<bool> CheckInUseAsync(int id);
         Task EditAsync(UpdatePartnerDto dto, IFormFile logo, IFormFile contract);
         Task DeleteAsync(int id);
     }

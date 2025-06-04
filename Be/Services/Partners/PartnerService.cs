@@ -1,21 +1,21 @@
 ﻿using Be.DTOs.Partners;
 using Be.Models;
 using Be.Repositories.Partners;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace Be.Services.Partners
 {
     public class PartnerService : IPartnerService
     {
         private readonly IPartnerRepository _repo;
-
-        public PartnerService(IPartnerRepository repo)
+        private readonly DatabaseContext _context;
+        public PartnerService(IPartnerRepository repo, DatabaseContext context)
         {
             _repo = repo;
+            _context = context;
         }
-
+        // Get all partners
         public async Task<IEnumerable<PartnerDto>> GetAllAsync()
         {
             var partners = await _repo.GetAllAsync();
@@ -28,7 +28,7 @@ namespace Be.Services.Partners
                 AccountId = p.AccountId
             });
         }
-
+        // Get partner by ID
         public async Task<PartnerDto> GetByIdAsync(int id)
         {
             var p = await _repo.GetByIdAsync(id);
@@ -41,17 +41,19 @@ namespace Be.Services.Partners
                 AccountId = p.AccountId
             };
         }
+        // Check if Img is valid
         private bool IsValidImage(string path)
         {
             var ext = Path.GetExtension(path).ToLower();
             return ext == ".png" || ext == ".svg";
         }
-
+        // Check if Document is valid
         private bool IsValidDocument(string path)
         {
             var ext = Path.GetExtension(path).ToLower();
             return ext == ".pdf" || ext == ".docx";
         }
+        // Check if Name is valid 
         private bool IsNameValid(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -60,6 +62,7 @@ namespace Be.Services.Partners
             }
             return true;
         }
+        // Check if Logo URL is valid
         private bool IsLogoUrlValid(string logoUrl)
         {
             if (string.IsNullOrWhiteSpace(logoUrl))
@@ -72,6 +75,7 @@ namespace Be.Services.Partners
             }
             return true;
         }
+        // Check if Contract file is valid
         private bool IsContractFileValid(string contractFile)
         {
             if (string.IsNullOrWhiteSpace(contractFile))
@@ -84,6 +88,7 @@ namespace Be.Services.Partners
             }
             return true;
         }
+        // Check if Name is unique
         private async Task<bool> IsNameUnique(string name, int? excludePartnerId = null)
         {
             var allPartners = await _repo.GetAllAsync();
@@ -97,9 +102,9 @@ namespace Be.Services.Partners
             }
             return true;
         }
+        // Add a new partner
         public async Task AddAsync(CreatePartnerDto dto)
         {
-            // Kiểm tra validation
             IsNameValid(dto.Name);
             IsLogoUrlValid(dto.LogoUrl);
             IsContractFileValid(dto.ContractFile);
@@ -114,21 +119,18 @@ namespace Be.Services.Partners
             };
             await _repo.AddAsync(partner);
         }
-
+        // Edit an existing partner
         public async Task EditAsync(UpdatePartnerDto dto)
         {
-            // Kiểm tra validation
             IsNameValid(dto.Name);
             IsLogoUrlValid(dto.LogoUrl);
             IsContractFileValid(dto.ContractFile);
             await IsNameUnique(dto.Name, dto.PartnerId);
 
-            // Tìm entity đang được tracking
             var existing = await _repo.GetByIdAsync(dto.PartnerId);
             if (existing == null)
                 throw new ArgumentException("Partner not found.");
 
-            // Cập nhật dữ liệu trực tiếp trên entity đã được track
             existing.Name = dto.Name.Trim();
             existing.LogoUrl = dto.LogoUrl;
             existing.ContractFile = dto.ContractFile;
@@ -136,10 +138,16 @@ namespace Be.Services.Partners
 
             await _repo.EditAsync(existing); 
         }
-
-
+        // Delete a partner by ID (with check if it is used in campaigns)
         public async Task DeleteAsync(int id)
         {
+            bool isUsed = await _context.CampaignPartners.AnyAsync(cp => cp.PartnerId == id);
+
+            if (isUsed)
+            {
+                throw new InvalidOperationException("Partner is in use. Delete related campaigns first");
+            }
+
             await _repo.DeleteAsync(id);
         }
     }

@@ -1,7 +1,5 @@
 ﻿using Be.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Be.Repositories.Purposes
 {
@@ -14,20 +12,28 @@ namespace Be.Repositories.Purposes
             _context = context;
         }
 
-        // Lấy danh sách tất cả Purpose
         public async Task<IEnumerable<Purpose>> GetAllAsync()
         {
             return await _context.Purposes.ToListAsync();
         }
 
-        // Thêm mới Purpose
+        public async Task<Purpose> GetByIdAsync(int id)
+        {
+            return await _context.Purposes.FindAsync(id);
+        }
+
         public async Task AddAsync(Purpose purpose)
         {
             await _context.Purposes.AddAsync(purpose);
             await _context.SaveChangesAsync();
         }
 
-        // Xoá Purpose theo ID
+        public async Task EditAsync(Purpose purpose)
+        {
+            _context.Purposes.Update(purpose);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task DeleteAsync(int id)
         {
             var purpose = await _context.Purposes.FindAsync(id);

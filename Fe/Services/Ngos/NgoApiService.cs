@@ -1,10 +1,6 @@
 ﻿using Fe.Dtos.Ngos;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Fe.Services.Ngos
 {
@@ -19,6 +15,7 @@ namespace Fe.Services.Ngos
             _httpClient = httpClient;
             _baseUrl = configuration["ApiSettings:BaseUrl"];
         }
+        // Create FileName
         private string GenerateFileName(string originalFileName)
         {
             var extension = Path.GetExtension(originalFileName);
@@ -29,6 +26,7 @@ namespace Fe.Services.Ngos
 
             return $"{fileNameWithoutExt}_{timestamp}{extension}";
         }
+        // Save the logo file to the appropriate folder based on its extension
         private async Task<string> SaveLogoFileAsync(IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
@@ -51,19 +49,20 @@ namespace Fe.Services.Ngos
                 await file.CopyToAsync(stream);
             }
 
-            // Sử dụng Path để xử lý đường dẫn một cách nhất quán
+        
             var relativePath = fullPath.Replace("wwwroot", "").Replace("\\", "/");
             return relativePath.StartsWith("/") ? relativePath : "/" + relativePath;
         }
+        // Get the logo file stream based on the URL provided
         public FileStream GetLogoFileStream(string logoUrl)
         {
             if (string.IsNullOrWhiteSpace(logoUrl))
                 throw new ArgumentException("Logo URL is empty.");
 
-            // Bỏ dấu '/' đầu tiên nếu có
+   
             var relativePath = logoUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
 
-            // Xác định loại file: .png hoặc .svg
+       
             var extension = Path.GetExtension(relativePath).ToLower();
 
             string fullPath = extension switch
@@ -78,13 +77,13 @@ namespace Fe.Services.Ngos
 
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
         }
+        // Delete the logo file based on the URL provided
         private void DeleteFileLogo(string logoUrl)
         {
             void DeleteFile(string url)
             {
                 if (string.IsNullOrWhiteSpace(url)) return;
 
-                // Chuẩn hoá đường dẫn tuyệt đối từ wwwroot
                 var relativePath = url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var fullPath = Path.Combine("wwwroot", relativePath);
 
@@ -103,7 +102,7 @@ namespace Fe.Services.Ngos
 
             DeleteFile(logoUrl);
         }
-        // GET: Lấy danh sách tất cả Ngos
+        // Get all NGOs from the API
         public async Task<IEnumerable<NgoDto>> GetAllAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/ngo");
@@ -112,7 +111,7 @@ namespace Fe.Services.Ngos
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<IEnumerable<NgoDto>>(json);
         }
-        // GET: Lấy Ngo theo ID
+        // Get an NGO by ID from the API
         public async Task<NgoDto> GetByIdAsync(int id)
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/ngo/{id}");
@@ -121,14 +120,12 @@ namespace Fe.Services.Ngos
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<NgoDto>(json);
         }
-
-        // POST: Thêm Ngo mới
+        // Add a new NGO from the API
         public async Task AddAsync(CreateNgoDto dto, IFormFile logo)
         {
-            // Lưu file logo vào wwwroot và trả về đường dẫn
+         
             dto.LogoUrl = await SaveLogoFileAsync(logo);
 
-            // Gửi DTO (chỉ chứa string path) sang BE qua API
             var content = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync($"{_baseUrl}/api/ngo", content);
 
@@ -138,19 +135,33 @@ namespace Fe.Services.Ngos
                 throw new HttpRequestException(errorMessage);
             }
         }
-        // PUT: Cập nhật Ngo
-        public async Task EditAsync(UpdateNgoDto dto, IFormFile logo)
+        // Check if an NGO is in use by ID from the API
+        public async Task<bool> CheckInUseAsync(int id)
         {
-            // Lấy thông tin ngo hiện tại để biết file cũ
+            var response = await _httpClient.GetAsync($"{_baseUrl}/api/ngo/{id}/is-used");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage);
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<dynamic>(content);
+
+            return result.isUsed == true;
+        }
+        // Edit an existing NGO from the API
+        public async Task EditAsync(UpdateNgoDto dto, IFormFile logo)
+        {    
             var oldNgo = await GetByIdAsync(dto.NgoId);
 
             string oldLogoUrl = oldNgo.LogoUrl;
 
-            // Nếu có file logo mới
             if (logo != null && logo.Length > 0)
             {
                 dto.LogoUrl = await SaveLogoFileAsync(logo);
-                // Xoá logo cũ sau khi lưu mới thành công
+     
                 DeleteFileLogo(oldLogoUrl); 
             }
 
@@ -163,21 +174,22 @@ namespace Fe.Services.Ngos
                 throw new HttpRequestException(errorMessage);
             }
         }
-        // DELETE: Xoá Ngo theo ID
+        // Delete an NGO by ID from the API
         public async Task DeleteAsync(int id)
         {
-            // Lấy thông tin ngo trước khi xoá để lấy đường dẫn file
-            var ngo = await GetByIdAsync(id); // Gọi lại API để lấy LogoUrl 
+            
+            var ngo = await GetByIdAsync(id); 
 
             var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/ngo/{id}");
 
             if (!response.IsSuccessStatusCode)
             {
                 var errorMessage = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    throw new InvalidOperationException(errorMessage);
                 throw new HttpRequestException(errorMessage);
             }
 
-            // Nếu xoá thành công → xoá file vật lý
             DeleteFileLogo(ngo.LogoUrl);
         }
 

@@ -1,7 +1,4 @@
-﻿using Fe.Dtos.Ngos;
-using Fe.DTOs.Campaigns;
-using Fe.DTOs.Partners;
-using Fe.DTOs.Purposes;
+﻿using Fe.DTOs.Campaigns;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
@@ -12,11 +9,13 @@ namespace Fe.Services.Campaigns
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
         private readonly string _cmpImgFolder = "wwwroot/images/cmpcontents";
+
         public CampaignApiService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _baseUrl = configuration["ApiSettings:BaseUrl"];
         }
+        // Create FileName 
         private string GenerateFileName(string originalFileName)
         {
             var extension = Path.GetExtension(originalFileName);
@@ -27,7 +26,7 @@ namespace Fe.Services.Campaigns
 
             return $"{fileNameWithoutExt}_{timestamp}{extension}";
         }
-        // Xử lý lọc Content -> lấy hình ảnh từ nội dung HTML của Campaign
+        // Extract images from HTML content and save them to the specified folder
         private List<(byte[] Data, string Extension, string FileName)> ExtractImagesFromContent(ref string htmlContent)
         {
             var result = new List<(byte[], string, string)>();
@@ -48,7 +47,7 @@ namespace Fe.Services.Campaigns
 
             return result;
         }
-        // Lưu hình ảnh vào thư mục wwwroot/images/cmpcontents/pngs hoặc svgs
+        // Save image content from HTML to the specified folder and return the modified HTML
         public async Task<string> SaveImgContent(string contentHtml)
         {
             if (string.IsNullOrWhiteSpace(contentHtml)) return null;
@@ -65,7 +64,7 @@ namespace Fe.Services.Campaigns
 
             return contentHtml;
         }
-        // Xóa hình ảnh từ thư mục wwwwroot/images/cmpcontents/pngs hoặc svgs 
+        // Delete images from the specified folder based on the HTML content
         public void DeleteImgContent(string contentHtml)
         {
             if (string.IsNullOrWhiteSpace(contentHtml))
@@ -92,8 +91,7 @@ namespace Fe.Services.Campaigns
                 }
             }
         }
-
-        // GET: lấy danh sách tất cả các Campaigns
+        // Get all campaigns from the API
         public async Task<IEnumerable<CampaignDto>> GetAllAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/campaign");
@@ -102,9 +100,7 @@ namespace Fe.Services.Campaigns
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<IEnumerable<CampaignDto>>(json);
         }
-   
-
-        // GET: lấy Campaign theo ID
+        // Get a campaign by ID from the API
         public async Task<CampaignDto> GetByIdAsync(int id)
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/campaign/{id}");
@@ -112,7 +108,7 @@ namespace Fe.Services.Campaigns
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<CampaignDto>(json);
         }
-        // POST: tạo mới Campaign
+        // Add a new campaign form the API
         public async Task AddAsync(CreateCampaignDto dto)
         {
             dto.Content = await SaveImgContent(dto.Content);
@@ -126,19 +122,34 @@ namespace Fe.Services.Campaigns
                 throw new HttpRequestException($"Error creating campaign: {error}");
             }
         }
+        // Edit an existing campaign form the API
         public async Task EditAsync(UpdateCampaignDto dto)
         {
-            // Lấy nội dung cũ từ API
             var existingCampaign = await GetByIdAsync(dto.CampaignId);
             var oldContent = existingCampaign.Content;
 
             if (!string.Equals(oldContent?.Trim(), dto.Content?.Trim(), StringComparison.Ordinal))
             {
-                DeleteImgContent(oldContent); // Xoá ảnh cũ trước
-                dto.Content = await SaveImgContent(dto.Content); // Rồi mới lưu ảnh mới
+                
+                var imgRegex = new Regex("<img[^>]+src=[\"'](?<src>/images/cmpcontents/[^\"']+)[\"'][^>]*>", RegexOptions.IgnoreCase);
+
+                var oldImgs = imgRegex.Matches(oldContent ?? "")
+                                       .Select(m => m.Groups["src"].Value)
+                                       .ToList();
+
+                var newImgs = imgRegex.Matches(dto.Content ?? "")
+                                       .Select(m => m.Groups["src"].Value)
+                                       .ToList();
+
+                var removedImgs = oldImgs.Except(newImgs, StringComparer.OrdinalIgnoreCase).ToList();
+
+                string fakeContent = string.Join("", removedImgs.Select(src => $"<img src=\"{src}\" />"));
+
+                DeleteImgContent(fakeContent);
+
+                dto.Content = await SaveImgContent(dto.Content);
             }
 
-            // Gửi yêu cầu cập nhật
             var json = JsonConvert.SerializeObject(dto);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
@@ -149,10 +160,10 @@ namespace Fe.Services.Campaigns
                 throw new HttpRequestException($"Error updating campaign: {error}");
             }
         }
-        // DELETE: Xoá Campaign theo ID
+        // Delete a campaign by ID from the API 
         public async Task DeleteAsync(int id)
         {
-            // Lấy thông tin campaign để xoá ảnh
+        
             var campaign = await GetByIdAsync(id);
 
             var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/campaign/{id}");
@@ -163,7 +174,6 @@ namespace Fe.Services.Campaigns
                 throw new HttpRequestException(errorMessage);
             }
 
-            // Nếu xoá thành công → xoá ảnh trong nội dung
             DeleteImgContent(campaign.Content);
         }
 

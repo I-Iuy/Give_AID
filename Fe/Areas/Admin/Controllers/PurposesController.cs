@@ -14,22 +14,17 @@ namespace Fe.Areas.Admin.Controllers
         {
             _purposeService = purposeService;
         }
-
-        // GET: /Admin/Purposes
+        [HttpGet]
         public async Task<IActionResult> List()
         {
             var purposes = await _purposeService.GetAllAsync();
             return View(purposes); 
         }
-
-
-        // GET: /Admin/Purposes/Add
+        [HttpGet]
         public IActionResult Add()
         {
             return View();
         }
-
-        // POST: /Admin/Purposes/Add
         [HttpPost]
         public async Task<IActionResult> Add(CreatePurposeDto dto)
         {
@@ -47,7 +42,6 @@ namespace Fe.Areas.Admin.Controllers
             {
                 var errorMessage = ex.Message;
 
-                // Phân loại lỗi để đưa về đúng field
                 if (errorMessage.Contains("already exists", StringComparison.OrdinalIgnoreCase))
                 {
                     ModelState.AddModelError(nameof(dto.Title), "This title already exists.");
@@ -64,13 +58,81 @@ namespace Fe.Areas.Admin.Controllers
                 return View(dto);
             }
         }
+        [HttpGet]
+        public async Task<IActionResult> CheckInUse(int id)
+        {
+            try
+            {
+                bool isUsed = await _purposeService.CheckInUseAsync(id);
+                return Json(new { isUsed }); 
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest(ex.Message); 
+            }
+        }
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var purpose = await _purposeService.GetByIdAsync(id);
 
+            if (purpose == null)
+                return NotFound();
 
-        // GET: /Admin/Purposes/Delete/{id}
+            var dto = new UpdatePurposeDto
+            {
+                PurposeId = purpose.PurposeId,
+                Title = purpose.Title,
+                AccountId = purpose.AccountId
+            };
+
+            return View(dto);
+        }
+        [HttpPost]
+        public async Task<IActionResult> Edit(UpdatePurposeDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(dto);
+            }
+
+            try
+            {
+                await _purposeService.EditAsync(dto);
+                return RedirectToAction("List");
+            }
+            catch (HttpRequestException ex)
+            {
+                var errorMessage = ex.Message;
+
+                if (errorMessage.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(nameof(dto.Title), "This title already exists.");
+                }
+                else if (errorMessage.Contains("must not be empty", StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(nameof(dto.Title), "Title is required.");
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, errorMessage);
+                }
+
+                return View(dto);
+            }
+        }
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            await _purposeService.DeleteAsync(id);
+            try
+            {
+                await _purposeService.DeleteAsync(id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Warning"] = ex.Message; 
+            }
+
             return RedirectToAction("List");
         }
     }

@@ -1,4 +1,5 @@
 ﻿using Be.DTOs.Partners;
+using Be.Services.CampaignUsage;
 using Be.Services.Partners;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,21 +12,19 @@ namespace Be.Controllers
     public class PartnerController : ControllerBase
     {
         private readonly IPartnerService _service;
+        private readonly ICampaignUsageService _usageService;
 
-        public PartnerController(IPartnerService service)
+        public PartnerController(IPartnerService service, ICampaignUsageService usageService)
         {
             _service = service;
+            _usageService = usageService;
         }
-
-        // GET: api/partner
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
-
-        // GET: api/partner/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -33,8 +32,6 @@ namespace Be.Controllers
             if (result == null) return NotFound();
             return Ok(result);
         }
-
-        // POST: api/partner
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePartnerDto dto)
         {
@@ -52,8 +49,12 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
-        // PUT: api/partner
+        [HttpGet("{id}/is-used")]
+        public async Task<IActionResult> IsPartnerUsed(int id)
+        {
+            bool isUsed = await _usageService.IsPartnerUsedAsync(id);
+            return Ok(new { isUsed });
+        }
         [HttpPut]
         public async Task<IActionResult> Edit([FromBody] UpdatePartnerDto dto)
         {
@@ -71,13 +72,18 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-
-        // DELETE: api/partner/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _service.DeleteAsync(id);
-            return Ok("Partner deleted successfully.");
+            try
+            {
+                await _service.DeleteAsync(id);
+                return Ok("Partner deleted successfully.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
     }
 }

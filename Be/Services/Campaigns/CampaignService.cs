@@ -9,11 +9,13 @@ namespace Be.Services.Campaigns
     {
         private readonly ICampaignRepository _repo;
         private readonly DatabaseContext _context;
+
         public CampaignService(ICampaignRepository repo, DatabaseContext context)
         {
             _repo = repo;
             _context = context;
         }
+        // Get all campaigns 
         public async Task<IEnumerable<CampaignDto>> GetAllAsync()
         {
             var campaigns = await _repo.GetAllAsync();
@@ -30,6 +32,7 @@ namespace Be.Services.Campaigns
                 PurposeTitle = purposes.FirstOrDefault(p => p.PurposeId == n.PurposeId)?.Title
             });
         }
+        // Get campaign by ID
         public async Task<CampaignDto> GetByIdAsync(int id)
         {
             var c = await _repo.GetByIdAsync(id);
@@ -72,6 +75,7 @@ namespace Be.Services.Campaigns
                 AccountId = c.AccountId
             };
         }
+        // Check if URL is valid
         private async Task<bool> IsValidUrl(string url)
         {
             if (string.IsNullOrWhiteSpace(url) || !Uri.IsWellFormedUriString(url, UriKind.Absolute))
@@ -89,18 +93,21 @@ namespace Be.Services.Campaigns
                 return false;
             }
         }
+        // Check if Title is valid
         private bool IsTitleValid(string title)
         {
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title must not be empty or whitespace.");
             return true;
         }
+        // Check if Content is valid
         private bool IsContentValid(string content)
         {
             if (string.IsNullOrWhiteSpace(content))
                 throw new ArgumentException("Content must not be empty or whitespace.");
             return true;
         }
+        // Check if VideoUrl is valid
         private async Task<bool> IsVideoUrlValid(string url)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -118,6 +125,7 @@ namespace Be.Services.Campaigns
 
             return true;
         }
+        // Check if Title is unique
         private async Task<bool> IsTitleUnique(string title, int? excludeCampaignId = null)
         {
             var all = await _repo.GetAllAsync();
@@ -129,6 +137,7 @@ namespace Be.Services.Campaigns
                 throw new ArgumentException("A campaign with the same title already exists.");
             return true;
         }
+        // Check if VideoUrl is unique
         private async Task<bool> IsVideoUrlUnique(string url, int? excludeCampaignId = null)
         {
             var all = await _repo.GetAllAsync();
@@ -141,6 +150,7 @@ namespace Be.Services.Campaigns
 
             return true;
         }
+        // Check if Purpose exists
         private async Task<bool> IsPurposeExists(int purposeId)
         {
             if (purposeId <= 0)
@@ -148,6 +158,7 @@ namespace Be.Services.Campaigns
 
             return await _context.Purposes.AnyAsync(p => p.PurposeId == purposeId);
         }
+        // Check if Partners is valid
         private async Task<bool> ArePartnersValid(List<int> partnerIds)
         {
             if (partnerIds == null || !partnerIds.Any()) return false;
@@ -157,6 +168,7 @@ namespace Be.Services.Campaigns
 
             return existingCount == partnerIds.Count;
         }
+        // Check if NGOs is valid
         private async Task<bool> AreNgosValid(List<int> ngoIds)
         {
             if (ngoIds == null || !ngoIds.Any()) return false;
@@ -166,6 +178,7 @@ namespace Be.Services.Campaigns
 
             return existingCount == ngoIds.Count;
         }
+        // Add a new campaign
         public async Task AddAsync(CreateCampaignDto dto)
         {
             IsTitleValid(dto.Title);
@@ -198,7 +211,7 @@ namespace Be.Services.Campaigns
             };
             await _repo.AddAsync(campaign);
         }
-
+        // Edit an existing campaign
         public async Task EditAsync(UpdateCampaignDto dto)
         {
             IsTitleValid(dto.Title);
@@ -237,6 +250,7 @@ namespace Be.Services.Campaigns
 
             await _repo.EditAsync(existing);
         }
+        // Delete a campaign by ID
         public async Task DeleteAsync(int id)
         {
             await _repo.DeleteAsync(id);

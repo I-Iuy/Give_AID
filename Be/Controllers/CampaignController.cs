@@ -13,14 +13,12 @@ namespace Be.Controllers
         {
             _service = service;
         }
-        // GET: api/campaign
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
-        // GET: api/campaign/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -28,7 +26,6 @@ namespace Be.Controllers
             if (result == null) return NotFound();
             return Ok(result);
         }
-        // POST: api/campaign
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCampaignDto dto)
         {
@@ -46,7 +43,6 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-        // PUT: api/campaign
         [HttpPut]
         public async Task<IActionResult> Edit([FromBody] UpdateCampaignDto dto)
         {
@@ -64,7 +60,6 @@ namespace Be.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
-        // DELETE: api/campaign/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

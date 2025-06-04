@@ -1,4 +1,6 @@
-﻿namespace Fe.DTOs.Share
+using System;
+
+namespace Fe.DTOs.Share
 {
     public class ShareDto
     {
