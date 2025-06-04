@@ -1,161 +1,211 @@
 ﻿@model List<Fe.Areas.Web.Controllers.HomeController.FeatureCard>
 
 @{
+    // Set page title and layout
     ViewData["Title"] = "Home";
     Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container px-4 px-lg-5">
-   <!-- Heading Row-->
-<div class="row gx-4 gx-lg-5 align-items-center my-5">
-    <div class="col-lg-7">
-        <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                <div class="carousel-item active">
-                    <img src="https://dummyimage.com/900x400/ced4da/6c757d.jpg" class="d-block w-100 rounded" alt="Slide 1">
-                </div>
-                <div class="carousel-item">
-                    <img src="https://dummyimage.com/900x400/b0b0b0/333" class="d-block w-100 rounded" alt="Slide 2">
-                </div>
-                <div class="carousel-item">
-                    <img src="https://dummyimage.com/900x400/a0a0a0/000" class="d-block w-100 rounded" alt="Slide 3">
-                </div>
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon"></span>
-            </button>
-        </div>
-    </div>
-    <div class="col-lg-5">
-        <h1 class="font-weight-light">@ViewData["IntroTitle"]</h1>
-        <p>@ViewData["IntroDescription"]</p>
-            <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#donationFilterModal">
-                @ViewData["IntroButtonText"]
-            </a>
-    </div>
-</div>
-    <!-- Call to Action-->
-    <div class="card text-white bg-secondary my-5 py-4 text-center">
-        <div class="card-body">
-            <p class="text-white m-0">This call to action card is a great place to showcase some important information or display a clever tagline!</p>
-        </div>
-    </div>
-    <!-- Content Row -->
-    <div class="row gx-4 gx-lg-5">
-        @foreach (var item in Model)
-        {
-            <div class="col-md-4 mb-5">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h4 class="card-title">@item.Title</h4>
-                        <div class="position-relative">
-                            <img class="img-fluid rounded mb-3" src="@item.ImageUrl" alt="@item.Title" />
-                            <span class="badge bg-danger text-white position-absolute top-0 start-0 m-2">
-                                @item.Cause
-                            </span>
-                        </div>
-                        <p class="card-text">@item.Description</p>
-                    </div>
-                    <div class="card-footer bg-transparent border-0">
-                        <a class="btn btn-primary btn-sm"
-                           asp-area="Web"
-                           asp-controller="Home"
-                           asp-action="Post"
-                           asp-route-id="@Model.IndexOf(item)">
-                            Find Out More
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
 
-    <!-- Pagination -->
-    @if ((int)ViewBag.TotalPages > 1)
-    {
-        <nav>
-            <ul class="pagination justify-content-center">
-                @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
-                {
-                    <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
-                        <a class="page-link"
-                           asp-area="Web"
-                           asp-controller="Home"
-                           asp-action="Index"
-                           asp-route-page="@i">@i</a>
-                    </li>
-                }
-            </ul>
-        </nav>
+    @{
+        // Get top 3 campaigns for carousel
+        var top3Posts = Model.Take(3).ToList();
     }
-    <!--Call to Action-->
-    <div class="card text-white bg-danger my-5 py-4">
-        <div class="container text-center">
-            <h2 class="fw-bold mb-5">The Numbers That Matter</h2>
-            <div class="row justify-content-center">
-                <div class="col-6 col-md-3 mb-4 mb-md-0">
-                    <div class="fs-6">Programs</div>
-                    <div class="fs-3 fw-bold">113</div>
+
+    <!-- Top section: Carousel + Introduction -->
+    <div class="row gx-4 gx-lg-5 align-items-center my-5">
+
+        <!-- Carousel showing top 3 campaigns -->
+        <div class="col-lg-7">
+            <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    @for (int i = 0; i < top3Posts.Count; i++)
+                    {
+                        var post = top3Posts[i];
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <a asp-area="Web" asp-controller="Home" asp-action="Post" asp-route-id="@post.CampaignId" asp-route-returnToAll="true">
+                                <img src="@post.ImageUrl" class="d-block w-100 rounded" alt="@post.Title" style="height: 400px; object-fit: cover;" />
+                            </a>
+                        </div>
+                    }
                 </div>
-                <div class="col-6 col-md-3 mb-4 mb-md-0">
-                    <div class="fs-6">Partners & NGOs</div>
-                    <div class="fs-3 fw-bold">35</div>
-                </div>
-                <div class="col-6 col-md-3 mb-4 mb-md-0">
-                    <div class="fs-6">Members</div>
-                    <div class="fs-3 fw-bold">29,632</div>
-                </div>
-                <div class="col-6 col-md-3 mb-4 mb-md-0">
-                    <div class="fs-6">Total Raised ($)</div>
-                    <div class="fs-3 fw-bold">$2.7M</div>
+                <!-- Carousel navigation arrows -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Introduction text and CTA buttons -->
+        <div class="col-lg-5 d-flex align-items-center" style="min-height: 400px;">
+            <div class="w-100 px-3 px-lg-4 py-4">
+                <!-- Intro Title -->
+                <h1 class="fw-bold text-primary fs-2 mb-3" style="line-height: 1.3;">
+                    @ViewData["IntroTitle"]
+                </h1>
+
+                <!-- Intro Description -->
+                <p class="text-secondary mb-3 fs-6" style="line-height: 1.6;">
+                    We connect you with reputable, transparent, and impactful charitable campaigns...
+                </p>
+
+                <!-- Key points -->
+                <ul class="list-unstyled text-secondary mb-4 fs-6" style="line-height: 1.5;">
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i>Support the campaigns that matter to you</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i>Transparent, accountable, and continuously updated</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i>Spread kindness and hope within the community</li>
+                </ul>
+
+                <!-- CTA buttons -->
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-primary px-4 py-2" data-bs-toggle="modal" data-bs-target="#donationFilterModal">
+                        @ViewData["IntroButtonText"]
+                    </a>
+                    <a class="btn btn-outline-primary px-4 py-2" href="/Web/Home/About/our-achievements">
+                        Our Achievements
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container mb-3 my-5 py-4 text-center">
-        <h2 class="fw-bold mb-3">The Other 50 Is in You</h2>
-        <p class="lead">
-            The number 50 represents something incomplete — lost to circumstances. <br />
-            But the other 50 lies within you. Be the one to complete the 100. <br />
-            A number that symbolizes relentless effort, unshaken by hardship, and the will to reach the final goal.
+    <!-- Emotional message block -->
+    <div class="card border-0 my-5 py-5 text-center shadow-sm" style="background-color: rgb(215, 231, 257);">
+        <div class="card-body px-3 px-md-5">
+            <h2 class="fw-bold text-primary mb-3">Together, We Create Lasting Change</h2>
+            <p class="text-secondary mb-4 fs-5">
+                In a world filled with uncertainty, your compassion becomes a powerful force for good...
+            </p>
+            <a href="/Web/Home/AllCampaigns" class="btn btn-outline-primary btn-lg px-4 py-2">
+                Explore Campaigns
+            </a>
+        </div>
+    </div>
+
+    <!-- Campaign list loaded via partial view -->
+    <div id="campaignContainer">
+        @Html.Partial("_CampaignListPartial", Model)
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="card border-0 my-5 py-5 shadow-sm" style="background-color: rgb(215, 231, 257);">
+        <div class="container text-center">
+            <h2 class="fw-bold mb-5 text-primary" data-aos="fade-up">The Numbers That Matter</h2>
+            <div class="row justify-content-center">
+                <!-- Individual Stat Cards -->
+                <div class="col-6 col-md-3 mb-4" data-aos="zoom-in" data-aos-delay="100">
+                    <div class="fs-6 text-secondary">Programs</div>
+                    <div class="fs-2 fw-bold text-dark">113</div>
+                </div>
+                <div class="col-6 col-md-3 mb-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="fs-6 text-secondary">Partners & NGOs</div>
+                    <div class="fs-2 fw-bold text-dark">35</div>
+                </div>
+                <div class="col-6 col-md-3 mb-4" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="fs-6 text-secondary">Members</div>
+                    <div class="fs-2 fw-bold text-dark">29,632</div>
+                </div>
+                <div class="col-6 col-md-3 mb-4" data-aos="zoom-in" data-aos-delay="400">
+                    <div class="fs-6 text-secondary">Total Raised ($)</div>
+                    <div class="fs-2 fw-bold text-dark">$2.7M</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storytelling block -->
+    <div class="py-5 text-center bg-white section-story" data-aos="fade-up" data-aos-duration="1000">
+        <div class="container px-4 px-lg-5">
+            <h3 class="fw-bold text-primary mb-4" data-aos="fade-up" data-aos-delay="100">Behind Every Number Is a Life Transformed</h3>
+            <p class="lead text-secondary mx-auto" style="max-width: 760px; line-height: 1.7;" data-aos="fade-up" data-aos-delay="200">
+                Every statistic we share carries far more than data — it carries a human story...
+            </p>
+
+            <!-- Story buttons -->
+            <div class="mt-4 d-flex justify-content-center flex-column flex-md-row gap-3" data-aos="fade-up" data-aos-delay="300">
+                <a href="/Web/Home/About/our-mission" class="btn btn-outline-primary btn-lg px-4 py-2">
+                    Our Mission
+                </a>
+                <a href="/Web/Home/About/what-we-do" class="btn btn-outline-primary btn-lg px-4 py-2">
+                    What We Do
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress + CTA block -->
+    <div class="container my-5 py-5 text-center" style="background-color: rgb(215, 231, 257); border-radius: 1rem;" data-aos="zoom-in-up" data-aos-duration="1200">
+        <h2 class="fw-bold text-primary mb-4" data-aos="fade-up" data-aos-delay="100">Be the Other 50%</h2>
+        <p class="lead text-secondary mb-4" data-aos="fade-up" data-aos-delay="200">
+            We've completed half the journey... <br />
+            But the other 50% depends on you...
         </p>
-        <div class="d-grid gap-1" style="grid-template-columns: repeat(10, 1fr);">
-            @for (int i = 1; i <= 50; i++)
-            {
-                var delay = (i * 0.05).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture); 
-                <img src="https://dummyimage.com/160x100/ced4da/6c757d&text=@($"{i}-img")"
-                     class="img-fluid w-100 animate__animated"
-                     data-animate="animate__flipInY"
-                     style="animation-delay: @($"{delay}s"); animation-duration: 1s;"
-                     alt="Moment @i" />
+
+        <!-- Progress bar -->
+        <div class="progress mx-auto mb-4" style="height: 30px; max-width: 600px; background-color: rgb(61, 206, 76);" data-aos="zoom-in" data-aos-delay="300">
+            <div class="progress-bar fw-bold" role="progressbar" style="width: 50%; background-color: forestgreen">
+                50% Complete
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <a href="/Web/Home/AllCampaigns" class="btn btn-primary btn-lg mt-2" data-aos="fade-up" data-aos-delay="400">
+            Become the Other 50%
+        </a>
+    </div>
+
+    <!-- Custom styling for text and section -->
+    <style>
+        .text-truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .section-story {
+            background-color: #ffffff;
+            border-top: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+            .section-story h3 {
+                font-size: 2rem;
             }
 
+            .section-story p {
+                font-size: 1.125rem;
+            }
+    </style>
 
-        </div>
-    </div>
-
-
-</div>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const targets = document.querySelectorAll("[data-animate]");
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const el = entry.target;
-                    el.classList.add(el.getAttribute("data-animate"));
-                    observer.unobserve(el); 
-                }
-            });
-        }, {
-            threshold: 0.2 
+    <!-- AOS (Animate on Scroll) library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            duration: 800,
         });
+    </script>
 
-        targets.forEach(el => observer.observe(el));
-    });
-</script>
+    <!-- AJAX pagination for campaign list -->
+    <script>
+        document.addEventListener("click", function (e) {
+            if (e.target.classList.contains("ajax-page")) {
+                e.preventDefault();
+                const page = e.target.dataset.page;
+
+                fetch(`/Web/Home/CampaignListPartial?page=${page}`)
+                    .then(res => res.text())
+                    .then(html => {
+                        document.getElementById("campaignContainer").innerHTML = html;
+                        AOS.init(); // Re-init AOS after content replacement
+                    });
+            }
+        });
+    </script>
+</div>

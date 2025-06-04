@@ -1,40 +1,67 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Meta tags for browser compatibility and responsiveness -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
     <title>@ViewData["Title"] - Web</title>
-    <!-- Favicon-->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
-    <!-- Simple DataTables library -->
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <!-- Simple DataTables styles for enhanced table rendering -->
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
-    <!-- Animate.css -->
+
+    <!-- Animate.css for reusable CSS animations -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <!-- Local CSS -->
+
+    <!-- AOS: Animate on Scroll Library (for scroll-based effects) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet" />
+
+    <!-- Custom site styles -->
     <link href="~/css/site.css" rel="stylesheet" />
+
+    <!-- Optional page-specific meta tags or styles -->
+    @RenderSection("MetaDescription", required: false)
 </head>
 <body>
+    <!-- Header / Navigation bar -->
     @Html.Partial("_Header")
 
-    <div class="pt-5">
+    <!-- Main content section (offset padding for fixed header) -->
+    <main class="pt-5">
         @RenderBody()
-    </div>
+    </main>
 
+    <!-- Footer section -->
     @Html.Partial("_Footer")
 
+    <!-- Donation modal filter form -->
     @Html.Partial("FilterPartial", new Fe.Areas.Web.Controllers.HomeController.DonationFilterModel())
-    <!-- Bootstrap core JS-->
+
+    <!-- Bootstrap JS Bundle (includes Popper for dropdowns, modals, etc.) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Simple DataTables library -->
+    <!-- DataTables functionality -->
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
-
-    <!-- Local custom init script -->
     <script src="~/js/datatables-simple-demo.js" asp-append-version="true"></script>
 
+    <!-- AOS initialization (Animate on Scroll) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,           // Animation duration (ms)
+            once: true,              // Animate only once
+            easing: 'ease-in-out'    // Animation easing
+        });
+    </script>
 
+    <!-- Optional section for page-specific scripts -->
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

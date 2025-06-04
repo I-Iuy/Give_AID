@@ -1,4 +1,5 @@
 ﻿using Fe.Services.Campaigns;
+using Fe.Services.ContentPages;
 using Fe.Services.Getdata;
 using Fe.Services.Ngos;
 using Fe.Services.Partners;
@@ -24,6 +25,8 @@ builder.Services.AddScoped<INgoApiService, NgoApiService>();
 builder.Services.AddScoped<ICampaignApiService, CampaignApiService>();
 // Đăng ký Getdata
 builder.Services.AddScoped<IGetdataApiService, GetdataApiService>();
+// Đăng ký ContentPage
+builder.Services.AddScoped<IContentPageApiService, ContentPageApiService>();
 var app = builder.Build();
 // Middleware xử lý HTTPS và file tĩnh (CSS, JS, ảnh, ...)
 app.UseHttpsRedirection();

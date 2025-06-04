@@ -1,0 +1,268 @@
+﻿@model Fe.DTOs.ContentPages.ContentPageDto
+
+@{
+    // Set page title
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+
+    // Retrieve and segment support purposes
+    var purposes = ViewBag.Purposes as IEnumerable<Fe.DTOs.Purposes.PurposeDto> ?? new List<Fe.DTOs.Purposes.PurposeDto>();
+    var topPurposes = purposes.Take(4).ToList(); // Top 4 purposes for sidebar
+    var remainingPurposes = purposes.Skip(4).ToList(); // Remaining purposes shown in modal
+    var topChunks = topPurposes.Chunk(2).ToArray(); // Divide into 2 columns
+
+    // Chunk all for modal display (split evenly into 2 columns)
+    var allChunks = purposes.Any()
+        ? purposes.Chunk(Math.Max(1, (int)Math.Ceiling(purposes.Count() / 2.0))).ToArray()
+        : Array.Empty<IEnumerable<Fe.DTOs.Purposes.PurposeDto>>();
+
+    // Extract first image from content or use fallback
+    var firstImageMatch = System.Text.RegularExpressions.Regex.Match(Model.Content ?? "", "<img[^>]*src=[\"'](?<src>[^\"']+)[\"']");
+    var coverImage = firstImageMatch.Success ? firstImageMatch.Groups["src"].Value : "https://dummyimage.com/800x400/ced4da/6c757d.jpg";
+
+    // Create meta description by stripping HTML and truncating
+    string description = System.Text.RegularExpressions.Regex.Replace(Model.Content ?? "", "<.*?>", "");
+    if (description.Length > 160)
+    {
+        description = description.Substring(0, 160) + "...";
+    }
+}
+
+@section MetaDescription {
+    <!-- SEO meta description -->
+    <meta name="description" content="@description" />
+}
+
+<!-- Main Container -->
+<div class="container mt-5">
+    <div class="row">
+
+        <!-- Left: Main article content -->
+        <div class="col-lg-8">
+
+            <!-- Breadcrumb navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+                </ol>
+            </nav>
+
+            <!-- Main content article -->
+            <article>
+                <header class="mb-4">
+                    <!-- Page Title -->
+                    <h1 class="fw-bold text-primary mb-2">@Model.Title</h1>
+
+                    <!-- Last Updated Info -->
+                    @if (!string.IsNullOrEmpty(Model.Author))
+                    {
+                        <p class="text-muted mb-1">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            Last updated on @Model.UpdatedAt.ToString("MMMM dd, yyyy") by @Model.Author
+                        </p>
+                    }
+                </header>
+
+                <!-- Dynamic HTML content -->
+                <section class="mb-5 content-style">
+                    @Html.Raw(Model.Content)
+                </section>
+
+                <!-- Help contact link -->
+                <div class="d-flex justify-content-end border-top pt-3">
+                    <div>
+                        <small class="text-muted">
+                            Need help? <a asp-area="Web" asp-controller="Home" asp-action="Contact">Contact us</a>
+                        </small>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- Right: Sidebar content -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 80px;">
+
+                <!-- Top purposes list (2x2 grid) -->
+                @if (purposes.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">Support Purpose</div>
+                        <div class="card-body">
+                            <div class="row">
+                                @for (int i = 0; i < topChunks.Length; i++)
+                                {
+                                    <div class="col-sm-6">
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var purpose in topChunks[i])
+                                            {
+                                                <a class="list-group-item list-group-item-action"
+                                                   asp-area="Web"
+                                                   asp-controller="Home"
+                                                   asp-action="AllCampaigns"
+                                                   asp-route-category="@purpose.Title">
+                                                    @purpose.Title
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- "View More" button opens modal -->
+                            @if (remainingPurposes.Any())
+                            {
+                                <button class="btn btn-link mt-3 px-0" data-bs-toggle="modal" data-bs-target="#allPurposeModal">
+                                    <i class="bi bi-list-ul me-1"></i> View More
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Urgent campaign list (up to 3 recent campaigns) -->
+                @{
+                    var urgentCampaigns = ViewBag.UrgentCampaigns as List<Fe.DTOs.Campaigns.CampaignDto> ?? new();
+                }
+                @if (urgentCampaigns.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">Urgent Support Programs</div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var campaign in urgentCampaigns)
+                            {
+                                <li class="list-group-item">
+                                    <a asp-area="Web"
+                                       asp-controller="Home"
+                                       asp-action="Post"
+                                       asp-route-id="@campaign.CampaignId"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @campaign.Title
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <!-- Subscribe button -->
+                <div class="card mb-4">
+                    <div class="card-header">Stay Informed</div>
+                    <div class="card-body">
+                        <p class="mb-3">Would you like to receive updates about future programs?</p>
+                        <a class="btn btn-outline-primary w-100" href="#">
+                            <i class="bi bi-bell-fill"></i> Get Notifications
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Donate button -->
+                <div class="card mb-4">
+                    <div class="card-header">Make a Difference</div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            You can bring <strong>@Model.Title</strong> to life. Every small donation counts toward something bigger.
+                        </p>
+                        <a class="btn btn-outline-danger w-100"
+                           data-bs-toggle="modal"
+                           data-bs-target="#donationFilterModal"
+                           data-selected-cause="About"
+                           data-program-title="@Model.Title">
+                            <i class="bi bi-heart-fill me-1"></i> Donate Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Display all support purposes -->
+@if (remainingPurposes.Any())
+{
+    <div class="modal fade" id="allPurposeModal" tabindex="-1" aria-labelledby="allPurposeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="allPurposeModalLabel">All Purposes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        @for (int i = 0; i < allChunks.Length; i++)
+                        {
+                            <div class="col-sm-6">
+                                <div class="list-group list-group-flush mb-3">
+                                    @foreach (var purpose in allChunks[i])
+                                    {
+                                        <a class="list-group-item list-group-item-action"
+                                           asp-area="Web"
+                                           asp-controller="Home"
+                                           asp-action="AllCampaigns"
+                                           asp-route-category="@purpose.Title"
+                                           data-bs-dismiss="modal">
+                                            @purpose.Title
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Custom styling for formatted content -->
+<style>
+    .content-style h2, .content-style h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .content-style img {
+        max-width: 100%;
+        border-radius: .5rem;
+        margin: 1rem 0;
+    }
+
+    .content-style p {
+        line-height: 1.8;
+    }
+
+    .btn-link {
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+</style>
+
+<!-- Script to handle modal link click and redirect -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('#allPurposeModal a[data-bs-dismiss="modal"]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetUrl = this.href;
+
+                const modalEl = document.getElementById('allPurposeModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalInstance.hide();
+
+                // Redirect after modal fully closed
+                setTimeout(() => {
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                    window.location.href = targetUrl;
+                }, 400);
+            });
+        });
+    });
+</script>

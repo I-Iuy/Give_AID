@@ -12,6 +12,13 @@
         public List<string> NgoNames { get; set; }
         public List<string> PartnerNames { get; set; }
 
+        // Merge Code Member: Tuan
+        // IDs of associated partners (used for creating/updating relationships)
+        public List<int> PartnerIds { get; set; }
+
+        // IDs of associated NGOs (used for creating/updating relationships)
+        public List<int> NgoIds { get; set; }
+        //
     }
 
 }

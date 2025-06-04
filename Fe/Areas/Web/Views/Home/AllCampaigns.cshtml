@@ -1,10 +1,14 @@
 ﻿@model List<Fe.Areas.Web.Controllers.HomeController.FeatureCard>
+
 @{
+    // Set page title and layout
     ViewData["Title"] = "All Campaigns";
     Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container mt-5">
+
+    <!-- Page title and breadcrumb navigation -->
     <h2 class="mt-4">All Fundraising Programs</h2>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item">
@@ -12,67 +16,194 @@
         </li>
         <li class="breadcrumb-item active">All Campaigns</li>
     </ol>
-    <!-- Filter bar -->
-    <form class="row g-3 mb-4" method="get">
+
+    <!-- Filter bar with search and category dropdown -->
+    <form class="row g-3 mb-4" method="get" id="filterForm">
         <div class="col-md-4">
-            <input name="search" class="form-control" type="text" placeholder="Search by title or description" value="@ViewBag.Search" />
+            <!-- Search box -->
+            <input name="search" class="form-control" type="text"
+                   placeholder="Search by title or description" value="@ViewBag.Search" />
         </div>
         <div class="col-md-4">
+            <!-- Category dropdown -->
             <select name="category" class="form-select">
                 <option value="">All Purpose</option>
-                @foreach (var cat in ViewBag.Categories as List<string>)
+                @{
+                    var categories = ViewBag.Categories as List<string>;
+                }
+                @if (categories != null)
                 {
-                    <option value="@cat" selected="@(ViewBag.Category == cat ? "selected" : null)">@cat</option>
+                    foreach (var cat in categories)
+                    {
+                        <option value="@cat" selected="@(ViewBag.Category == cat ? "selected" : null)">
+                            @cat
+                        </option>
+                    }
                 }
             </select>
         </div>
         <div class="col-md-4">
+            <!-- Filter submit button -->
             <button class="btn btn-primary w-100" type="submit">Filter</button>
         </div>
     </form>
 
-    <!-- Content Grid -->
-    <div class="row gx-4 gx-lg-5">
+    <!-- Campaign Grid Display -->
+    @using System.Text.RegularExpressions
+    <div class="row gx-4 gx-lg-5" id="campaign-container">
         @foreach (var item in Model)
         {
-            <div class="col-md-4 mb-5">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h4 class="card-title">@item.Title</h4>
-                        <div class="position-relative">
-                            <img class="img-fluid rounded mb-3" src="@item.ImageUrl" alt="@item.Title" />
-                            <span class="badge bg-danger text-white position-absolute top-0 start-0 m-2">
-                                @item.Cause
-                            </span>
-                        </div>
-                        <p class="card-text">@item.Description</p>
-                    </div>
-                    <div class="card-footer bg-transparent border-0">
-                        <a class="btn btn-primary btn-sm"
-                           asp-area="Web"
-                           asp-controller="Home"
-                           asp-action="Post"
-                           asp-route-id="@Model.IndexOf(item)"
-                           asp-route-returnToAll="true">
-                            Find Out More
-                        </a>
+            // Strip HTML from content to show plain text
+            var plainText = Regex.Replace(item.Description ?? "", "<.*?>", "");
+            var shortText = plainText.Length > 150 ? plainText.Substring(0, 150) + "..." : plainText;
 
+            <!-- Individual campaign card -->
+            <div class="col-md-4 mb-5">
+                <div class="card h-100 shadow-sm border-0" data-aos="fade-left" data-aos-duration="800">
+                    <div class="card-body d-flex flex-column">
+
+                        <!-- Campaign title -->
+                        <h5 class="card-title text-primary fw-bold">@item.Title</h5>
+
+                        <!-- Campaign image and cause badge -->
+                        <div class="position-relative mb-3">
+                            <img src="@item.ImageUrl" alt="@item.Title" class="img-fluid rounded"
+                                 style="height: 200px; object-fit: cover; width: 100%;" />
+                            <span class="badge bg-danger position-absolute top-0 start-0 m-2">@item.Cause</span>
+                        </div>
+
+                        <!-- Shortened description -->
+                        <p class="text-secondary mb-4 text-truncate-2">@shortText</p>
+
+                        <!-- Action buttons (view + donate) -->
+                        <div class="mt-auto d-flex justify-content-between">
+                            <!-- View details -->
+                            <a class="btn btn-outline-primary btn-sm"
+                               asp-area="Web"
+                               asp-controller="Home"
+                               asp-action="Post"
+                               asp-route-id="@item.CampaignId"
+                               asp-route-returnToAll="true">
+                                Find Out More
+                            </a>
+
+                            <!-- Open donation modal -->
+                            <a class="btn btn-danger btn-sm"
+                               data-bs-toggle="modal"
+                               data-bs-target="#donationFilterModal"
+                               data-program-title="@item.Title"
+                               data-selected-cause="@item.Cause">
+                                <i class="bi bi-heart-fill"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         }
     </div>
 
-    <!-- Pagination -->
+    <!-- Pagination navigation -->
     <nav>
-        <ul class="pagination justify-content-center">
+        <ul class="pagination justify-content-center" id="pagination-container">
+
+            <!-- Previous button -->
+            <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
+                <a class="page-link pagination-link" href="#" data-page="@(ViewBag.CurrentPage - 1)">Previous</a>
+            </li>
+
+            <!-- Page number buttons -->
             @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
             {
                 <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
-                    <a class="page-link" asp-action="AllCampaigns" asp-route-page="@i"
-                       asp-route-search="@ViewBag.Search" asp-route-category="@ViewBag.Category">@i</a>
+                    <a class="page-link pagination-link" href="#" data-page="@i">@i</a>
                 </li>
             }
+
+            <!-- Next button -->
+            <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                <a class="page-link pagination-link" href="#" data-page="@(ViewBag.CurrentPage + 1)">Next</a>
+            </li>
         </ul>
     </nav>
+
+    <!-- Loading spinner for AJAX -->
+    <div id="campaign-loading" class="text-center my-4 d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 </div>
+
+<!-- Truncate text after 2 lines -->
+<style>
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+
+<!-- AJAX script for dynamic pagination and filtering -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("filterForm");
+        const campaignContainer = document.getElementById("campaign-container");
+        const paginationContainer = document.getElementById("pagination-container");
+        const loadingSpinner = document.getElementById("campaign-loading");
+
+        // Load campaigns dynamically via AJAX
+        function loadPage(page) {
+            const search = form.search.value;
+            const category = form.category.value;
+
+            // Show loading animation
+            loadingSpinner.classList.remove("d-none");
+            campaignContainer.style.opacity = 0.5;
+
+            // Fetch filtered + paginated content
+            fetch(`/Web/Home/AllCampaigns?page=${page}&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}`)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Replace campaign grid + pagination block
+                    campaignContainer.innerHTML = doc.querySelector("#campaign-container").innerHTML;
+                    paginationContainer.innerHTML = doc.querySelector("#pagination-container").innerHTML;
+
+                    // Re-initialize AOS animations (if present)
+                    if (window.AOS) AOS.init();
+
+                    // Re-bind events for new page links
+                    attachPaginationEvents();
+
+                    // Fade effect
+                    campaignContainer.style.opacity = 1;
+
+                    // Auto-scroll to top of campaign section
+                    window.scrollTo({ top: campaignContainer.offsetTop - 100, behavior: 'smooth' });
+
+                    // Hide loading spinner
+                    loadingSpinner.classList.add("d-none");
+                });
+        }
+
+        // Bind page link click events
+        function attachPaginationEvents() {
+            const paginationLinks = document.querySelectorAll(".pagination-link");
+            paginationLinks.forEach(link => {
+                link.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const page = this.dataset.page;
+                    if (!page || isNaN(page)) return;
+                    loadPage(page);
+                });
+            });
+        }
+
+        // Initial setup
+        attachPaginationEvents();
+    });
+</script>

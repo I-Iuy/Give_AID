@@ -1,12 +1,14 @@
 ﻿using Be.Models;
 using Be.Repositories.Campaigns;
 using Be.Repositories.CampaignsUsage;
+using Be.Repositories.ContentPages;
 using Be.Repositories.Donations;
 using Be.Repositories.Ngos;
 using Be.Repositories.Partners;
 using Be.Repositories.Purposes;
 using Be.Services.Campaigns;
 using Be.Services.CampaignUsage;
+using Be.Services.ContentPages;
 using Be.Services.Donations;
 using Be.Services.Ngos;
 using Be.Services.Partners;
@@ -41,7 +43,36 @@ builder.Services.AddScoped<ICampaignUsageService, CampaignUsageService>();
 //Đăng ký Donation
 builder.Services.AddScoped<IDonationRepository, DonationRepository>();
 builder.Services.AddScoped<IDonationService, DonationService>();
+//Đăng ký ContentPage
+builder.Services.AddScoped<IContentPageRepository, ContentPageRepository>();
+builder.Services.AddScoped<IContentPageService, ContentPageService>();
+
 var app = builder.Build();
+
+// ===========================
+// Seed Initial ContentPages
+// ===========================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+
+    // If no ContentPages exist, seed default pages
+    if (!db.ContentPages.Any())
+    {
+        db.ContentPages.AddRange(new[]
+        {
+            new ContentPage { Title = "What We Do", Slug = "what-we-do", Content = "", Author = "System", UpdatedAt = DateTime.Now },
+            new ContentPage { Title = "Our Mission", Slug = "our-mission", Content = "", Author = "System", UpdatedAt = DateTime.Now },
+            new ContentPage { Title = "Our Team", Slug = "our-team", Content = "", Author = "System", UpdatedAt = DateTime.Now },
+            new ContentPage { Title = "Career With Us", Slug = "career-with-us", Content = "", Author = "System", UpdatedAt = DateTime.Now },
+            new ContentPage { Title = "Our Achievements", Slug = "our-achievements", Content = "", Author = "System", UpdatedAt = DateTime.Now },
+            new ContentPage { Title = "Our Supporters", Slug = "our-supporters", Content = "", Author = "System", UpdatedAt = DateTime.Now },
+            new ContentPage { Title = "Read About Us", Slug = "read-about-us", Content = "", Author = "System", UpdatedAt = DateTime.Now }
+        });
+
+        db.SaveChanges(); // Persist seed data
+    }
+}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

@@ -1,0 +1,101 @@
+﻿@model List<Fe.Areas.Web.Controllers.HomeController.FeatureCard>
+@using System.Text.RegularExpressions
+
+<!-- Campaign List Container -->
+<div class="row gx-4 gx-lg-5">
+    @foreach (var item in Model)
+    {
+        // Remove HTML tags from campaign description
+        var plainText = Regex.Replace(item.Description ?? "", "<.*?>", "");
+        var shortText = plainText.Length > 150 ? plainText.Substring(0, 150) + "..." : plainText;
+
+        <!-- Campaign Card -->
+        <div class="col-md-4 mb-5" data-aos="fade-up" data-aos-duration="800">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body d-flex flex-column">
+
+                    <!-- Campaign Title -->
+                    <h5 class="card-title text-primary fw-bold">@item.Title</h5>
+
+                    <!-- Campaign Image with Category Badge -->
+                    <div class="position-relative mb-3">
+                        <img src="@item.ImageUrl"
+                             alt="@item.Title"
+                             class="img-fluid rounded"
+                             style="height: 200px; width: 100%; object-fit: cover;" />
+                        <!-- Display the cause of campaign as a badge on top-left -->
+                        <span class="badge bg-danger position-absolute top-0 start-0 m-2">
+                            @item.Cause
+                        </span>
+                    </div>
+
+                    <!-- Campaign Description (truncated text) -->
+                    <p class="card-text text-secondary mb-4 text-truncate-2" style="min-height: 3.2em;">
+                        @shortText
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-auto d-flex justify-content-between">
+                        <!-- Link to campaign detail page -->
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-area="Web" asp-controller="Home" asp-action="Post"
+                           asp-route-id="@item.CampaignId" asp-route-returnToAll="true">
+                            Find Out More
+                        </a>
+
+                        <!-- Open donation filter modal with selected campaign info -->
+                        <a class="btn btn-danger btn-sm"
+                           data-bs-toggle="modal"
+                           data-bs-target="#donationFilterModal"
+                           data-program-title="@item.Title"
+                           data-selected-cause="@item.Cause">
+                            <i class="bi bi-heart-fill"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Pagination Section -->
+@{
+    int currentPage = (int)ViewBag.CurrentPage;
+    int totalPages = (int)ViewBag.TotalPages;
+    int maxVisiblePages = 5;
+
+    // Determine range of page numbers to show
+    int startPage = Math.Max(1, currentPage - 2);
+    int endPage = Math.Min(totalPages, startPage + maxVisiblePages - 1);
+}
+
+<!-- Pagination Navigation Bar -->
+<nav>
+    <ul class="pagination justify-content-center">
+
+        <!-- Previous Page Button -->
+        @if (currentPage > 1)
+        {
+            <li class="page-item">
+                <a href="#" class="page-link ajax-page" data-page="@(currentPage - 1)">«</a>
+            </li>
+        }
+
+        <!-- Numbered Page Links -->
+        @for (int i = startPage; i <= endPage; i++)
+        {
+            <li class="page-item @(currentPage == i ? "active" : "")">
+                <a href="#" class="page-link ajax-page" data-page="@i">@i</a>
+            </li>
+        }
+
+        <!-- Next Page Button -->
+        @if (currentPage < totalPages)
+        {
+            <li class="page-item">
+                <a href="#" class="page-link ajax-page" data-page="@(currentPage + 1)">»</a>
+            </li>
+        }
+    </ul>
+</nav>

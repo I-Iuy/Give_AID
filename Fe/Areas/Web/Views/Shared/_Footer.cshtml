@@ -1,3 +1,108 @@
-﻿<!-- Footer-->
-<footer class="py-5 bg-dark">
+﻿<!-- Footer Section -->
+<footer class="bg-dark text-light pt-5 pb-4 mt-5 position-relative">
+    <div class="container text-md-start">
+        <div class="row flex-row">
+
+            <!-- Google Map Location -->
+            <div class="col-md-3 mb-4">
+                <h6 class="text-uppercase fw-bold mb-3">Our Location</h6>
+                <div class="ratio ratio-4x3 rounded overflow-hidden border border-light">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15677.218097556664!2d106.68806686066893!3d10.78797230885724!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752fcdf5e6b00b%3A0xed1c6762515e1113!2sFPT%20Aptech!5e0!3m2!1svi!2s!4v1748924068562!5m2!1svi!2s"
+                            width="100%" height="100%" style="border:0;" allowfullscreen=""
+                            loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="col-md-3 mb-4">
+                <h6 class="text-uppercase fw-bold mb-3">Contact Us</h6>
+                <p>
+                    <i class="bi bi-geo-alt-fill me-2"></i>
+                    <a href=https://maps.app.goo.gl/fFSozrzoP6QLPdRd7 target="_blank" class="text-light text-decoration-none">
+                        391A Nam Ky Khoi Nghia Street, District 3, HCMC, Vietnam
+                    </a>
+                </p>
+                <p>
+                    <i class="bi bi-envelope-fill me-2"></i>
+                    <a href="mailto:aptech.fpt@fe.edu.vn" class="text-light text-decoration-none">
+                        aptech.fpt@fe.edu.vn
+                    </a>
+                </p>
+                <p>
+                    <i class="bi bi-telephone-fill me-2"></i>
+                    <a href="tel:0834999810" class="text-light text-decoration-none">
+                        0834 999 810
+                    </a>
+                </p>
+            </div>
+
+            <!-- Quick Navigation Links -->
+            <div class="col-md-2 mb-4">
+                <h6 class="text-uppercase fw-bold mb-3">Quick Links</h6>
+                <ul class="list-unstyled">
+                    <li><a class="text-light text-decoration-none" asp-area="Web" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li><a class="text-light text-decoration-none" asp-area="Web" asp-controller="Home" asp-action="AllCampaigns">All Campaigns</a></li>
+                    <li><a class="text-light text-decoration-none" asp-route-slug="what-we-do" asp-area="Web" asp-controller="Home" asp-action="About">What We Do</a></li>
+                    <li><a class="text-light text-decoration-none" asp-route-slug="our-mission" asp-area="Web" asp-controller="Home" asp-action="About">Our Mission</a></li>
+                    <li><a class="text-light text-decoration-none" asp-route-slug="our-team" asp-area="Web" asp-controller="Home" asp-action="About">Our Team</a></li>
+                    <li><a class="text-light text-decoration-none" asp-route-slug="read-about-us" asp-area="Web" asp-controller="Home" asp-action="About">Read About Us</a></li>
+                </ul>
+            </div>
+
+            <!-- Logo, Description & Socials -->
+            <div class="col-md-4 mb-4 text-md-end">
+                <div class="d-flex justify-content-md-end align-items-center gap-2 mb-2">
+                    <img src="~/images/logo.png" alt="Logo" style="height: 32px;" />
+                    <span class="fs-4 fw-bold gradient-text">Give-AID</span>
+                </div>
+                <p class="text-light small">
+                    Give-AID is a government-backed nonprofit platform that connects trusted NGOs to support transparent and impactful humanitarian initiatives.<br />
+                    In service of humanity, with integrity and compassion — building a future where every act of giving becomes a lasting force for good.
+                </p>
+                <div class="d-flex justify-content-md-end gap-3">
+                    <a href="#" class="text-light fs-5"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="text-light fs-5"><i class="bi bi-instagram"></i></a>
+                    <a href="#" class="text-light fs-5"><i class="bi bi-twitter"></i></a>
+                    <a href="#" class="text-light fs-5"><i class="bi bi-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Copyright -->
+        <div class="text-center mt-4 pt-3 border-top border-secondary">
+            <small class="text-secondary">© @DateTime.Now.Year Give-AID. All rights reserved.</small>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" id="backToTopBtn" class="btn btn-primary btn-lg rounded-circle shadow"
+       style="position: fixed; bottom: 30px; right: 30px; display: none; z-index: 9999;">
+        <i class="bi bi-arrow-up"></i>
+    </a>
 </footer>
+
+<!-- Scroll to Top Button Script -->
+<script>
+    window.onscroll = function () {
+        const btn = document.getElementById("backToTopBtn");
+        btn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200)
+            ? "block" : "none";
+    };
+
+    document.getElementById("backToTopBtn").addEventListener("click", function (e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+</script>
+
+<!-- Gradient Style (same as header) -->
+<style>
+    .gradient-text {
+        background: linear-gradient(to bottom, #00FFFF, #00FFAA, #00FF5E, #A6FF00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
+    }
+</style>

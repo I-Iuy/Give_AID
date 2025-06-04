@@ -1,152 +1,254 @@
 ﻿@model Fe.Areas.Web.Controllers.HomeController.FeatureCard
 
 @{
+    // Set page title and layout
     ViewData["Title"] = Model.Title;
     Layout = "~/Areas/Web/Views/Shared/_Layout.cshtml";
+
+    // Load purposes from ViewBag and split for UI
+    var purposes = ViewBag.Purposes as IEnumerable<Fe.DTOs.Purposes.PurposeDto> ?? new List<Fe.DTOs.Purposes.PurposeDto>();
+    var topPurposes = purposes.Take(4).ToList();
+    var remainingPurposes = purposes.Skip(4).ToList();
+    var topChunks = topPurposes.Chunk(2).ToArray();
+    var allChunks = purposes.Any()
+        ? purposes.Chunk(Math.Max(1, (int)Math.Ceiling(purposes.Count() / 2.0))).ToArray()
+        : Array.Empty<IEnumerable<Fe.DTOs.Purposes.PurposeDto>>();
 }
 
-<!-- Page content-->
 <div class="container mt-5">
     <div class="row">
-        <div class="col-lg-8">
-            <!-- Post content-->
-            <article>
-                <!-- Post header-->
-                <header class="mb-4">
-                    <!-- Post title-->
-                    <h1 class="fw-bolder mb-1">@Model.Title</h1>
-                    <ol class="breadcrumb mb-4">
-                        <li class="breadcrumb-item">
-                            <a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        @if (ViewBag.ReturnToAll == true)
-                        {
-                            <li class="breadcrumb-item">
-                                <a asp-area="Web" asp-controller="Home" asp-action="AllCampaigns">All Campaigns</a>
-                            </li>
-                        }
-                        <li class="breadcrumb-item active">@Model.Title</li>
-                    </ol>
-                    <!-- Post meta content-->
-                    <div class="text-muted fst-italic mb-2">Posted on January 1, 2023 by NGO Platform</div>
-                    <!-- Post category (Cause)-->
-                    <a class="badge bg-danger text-decoration-none link-light" href="#">@Model.Cause</a>
-                </header>
-                <!-- Preview image figure-->
-                <figure class="mb-4">
-                    <img class="img-fluid rounded" src="https://dummyimage.com/900x400/ced4da/6c757d.jpg" alt="Post Banner" />
-                </figure>
-                <!-- Post content-->
-                <section class="mb-5">
-                    <p class="fs-5 mb-4">@Model.Description</p>
-                    <p class="fs-5 mb-4">The universe is large and old, and the ingredients for life as we know it are everywhere, so there's no reason to think that Earth would be unique in that regard.</p>
-                    <p class="fs-5 mb-4">If you get asteroids about a kilometer in size, those are large enough and carry enough energy into our system to disrupt transportation, communication, and the food chains.</p>
 
-                    <h2 class="fw-bolder mb-4 mt-5">We Believe in Change</h2>
-                    <p class="fs-5 mb-4">Sharing knowledge, providing aid, and building sustainable systems for underserved communities is what drives our mission.</p>
-                    <p class="fs-5 mb-4">Every contribution matters — whether it’s time, money, or effort — toward building a better future for all.</p>
+        <!-- Left: Main content -->
+        <div class="col-lg-8">
+
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-area="Web" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+                </ol>
+            </nav>
+
+            <!-- Article Content -->
+            <article>
+                <header class="mb-4">
+                    <!-- Title and metadata -->
+                    <h1 class="fw-bold text-primary mb-2">@Model.Title</h1>
+                    <p class="text-muted mb-1">
+                        <i class="bi bi-calendar-event me-1"></i>
+                        Posted on @DateTime.Now.ToString("MMMM dd, yyyy") by NGO Platform
+                    </p>
+                    <span class="badge bg-danger mb-3">@Model.Cause</span>
+                </header>
+
+                <!-- Main Image -->
+                <figure class="mb-4">
+                    <img src="@Model.ImageUrl" alt="@Model.Title" width="100%" height="380" class="rounded" />
+                </figure>
+
+                <!-- HTML Description -->
+                <section class="mb-5 content-style">
+                    @Html.Raw(Model.Description)
                 </section>
+
+                <!-- Embedded YouTube Video -->
+                @if (!string.IsNullOrWhiteSpace(Model.VideoUrl))
+                {
+                    <div class="ratio ratio-16x9 mb-5">
+                        <iframe src="@Model.VideoUrl.Replace("watch?v=", "embed/")"
+                                title="YouTube video"
+                                allowfullscreen
+                                class="rounded border">
+                        </iframe>
+                    </div>
+                }
             </article>
-            
-            <!-- Post partners&NGOs-->
+
+            <!-- Collaborators (Top 3 Partners & NGOs) -->
             @if ((Model.Partners?.Any() ?? false) || (Model.NGOs?.Any() ?? false))
             {
-                <section class="mb-5">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-4">Program Collaborators</h5>
-                            <div class="row">
-                                @if (Model.Partners?.Any() ?? false)
+                <div class="row mb-3">
+                    <!-- Partners Column -->
+                    @if (Model.Partners?.Any() ?? false)
+                    {
+                        var topPartners = Model.Partners.Take(3).ToList();
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Partners</h6>
+                            <ul class="list-group list-group-flush">
+                                @foreach (var partner in topPartners)
                                 {
-                                    <div class="col-md-6 mb-4">
-                                        <h6 class="fw-bold mb-3">Partners</h6>
-                                        <ul class="list-group list-group-flush">
-                                            @foreach (var partner in Model.Partners)
-                                            {
-                                                <li class="list-group-item d-flex align-items-center">
-                                                    <img src="@partner.LogoUrl" alt="@partner.Name"
-                                                         class="rounded-circle me-3" width="32" height="32" />
-                                                    <span>@partner.Name</span>
-                                                </li>
-                                            }
-                                        </ul>
-                                    </div>
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <img src="@partner.LogoUrl" alt="@partner.Name" class="rounded-circle me-3" width="32" height="32" />
+                                        <span>@partner.Name</span>
+                                    </li>
                                 }
-
-                                @if (Model.NGOs?.Any() ?? false)
-                                {
-                                    <div class="col-md-6 mb-4">
-                                        <h6 class="fw-bold mb-3">NGOs</h6>
-                                        <ul class="list-group list-group-flush">
-                                            @foreach (var ngo in Model.NGOs)
-                                            {
-                                                <li class="list-group-item d-flex align-items-center">
-                                                    <img src="@ngo.LogoUrl" alt="@ngo.Name"
-                                                         class="rounded-circle me-3" width="32" height="32" />
-                                                    <span>@ngo.Name</span>
-                                                </li>
-                                            }
-                                        </ul>
-                                    </div>
-                                }
-                            </div>
+                            </ul>
                         </div>
-                    </div>
-                </section>
+                    }
+
+                    <!-- NGOs Column -->
+                    @if (Model.NGOs?.Any() ?? false)
+                    {
+                        var topNgos = Model.NGOs.Take(3).ToList();
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">NGOs</h6>
+                            <ul class="list-group list-group-flush">
+                                @foreach (var ngo in topNgos)
+                                {
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <img src="@ngo.LogoUrl" alt="@ngo.Name" class="rounded-circle me-3" width="32" height="32" />
+                                        <span>@ngo.Name</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
             }
 
-            <section class="mb-5">
-                <div class="card bg-light">
-                    <div class="card-body">
-                        <!-- Comment form-->
-                        <form class="mb-4">
-                            <textarea class="form-control mb-2" rows="3" placeholder="Join the discussion and leave a comment!"></textarea>
+            <!-- View All Collaborators Button -->
+            @if ((Model.Partners?.Count > 3 || Model.NGOs?.Count > 3))
+            {
+                <div class="text-center mt-3">
+                    <button class="btn btn-link" data-bs-toggle="modal" data-bs-target="#collaboratorsModal" style="margin-bottom: 20px">
+                        <i class="bi bi-people-fill me-1"></i> View All Collaborators
+                    </button>
+                </div>
+            }
 
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="anonymousCheck" />
-                                <label class="form-check-label" for="anonymousCheck">
-                                    Post anonymously
-                                </label>
-                            </div>
-                        </form>
-
-                        <!-- Comment with nested comments-->
-                        <div class="d-flex mb-4">
-                            <!-- Parent comment-->
-
-                            <div class="ms-3">
-                                <div class="fw-bold">UserName</div>
-                                If you're going to lead a space frontier, it has to be government; it'll never be private enterprise. Because the space frontier is dangerous, and it's expensive, and it has unquantified risks.
-                                <!-- Child comment 1-->
-                                <div class="d-flex mt-4">
-
-                                    <div class="ms-3">
-                                        <div class="fw-bold">Admin</div>
-                                        And under those conditions, you cannot establish a capital-market evaluation of that enterprise. You can't get investors.
-                                    </div>
-                                </div>                      
-                            </div>
+            <!-- Modal: View All Collaborators with Search -->
+            <div class="modal fade" id="collaboratorsModal" tabindex="-1" aria-labelledby="collaboratorsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">All Collaborators for @Model.Title</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <!-- Single comment-->
-                        <div class="d-flex">
 
-                            <div class="ms-3">
-                                <div class="fw-bold">UserName</div>
-                                When I look at the universe and all the ways the universe wants to kill us, I find it hard to reconcile that with statements of beneficence.
+                        <div class="modal-body">
+                            <!-- Search Inputs -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" placeholder="Search Partners..." id="partnerSearchInput" />
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" placeholder="Search NGOs..." id="ngoSearchInput" />
+                                </div>
+                            </div>
+
+                            <!-- List Collaborators -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-group" id="partnerList">
+                                        @foreach (var partner in Model.Partners)
+                                        {
+                                            <li class="list-group-item">
+                                                <img src="@partner.LogoUrl" width="32" height="32" class="me-2 rounded-circle" />
+                                                <span>@partner.Name</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-group" id="ngoList">
+                                        @foreach (var ngo in Model.NGOs)
+                                        {
+                                            <li class="list-group-item">
+                                                <img src="@ngo.LogoUrl" width="32" height="32" class="me-2 rounded-circle" />
+                                                <span>@ngo.Name</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
+
+            <!-- Placeholder: Comment Form (non-functional) -->
+            <div class="card bg-light mb-5">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Leave a Comment</h5>
+                    <form>
+                        <textarea class="form-control mb-2" rows="4" placeholder="Write your thoughts..."></textarea>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="anonymousCheck" />
+                            <label class="form-check-label" for="anonymousCheck">Post anonymously</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
         </div>
 
-        <!-- Side widgets-->
+        <!-- Right: Sidebar -->
         <div class="col-lg-4">
             <div class="sticky-top" style="top: 80px;">
-                @Html.Partial("_SupportPurpose")
-                @Html.Partial("_UrgentProgramsWidget")
 
-                <!-- Interest Subscription Widget -->
+                <!-- Sidebar: Support Purpose List -->
+                @if (purposes.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">Support Purpose</div>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach (var chunk in topChunks)
+                                {
+                                    <div class="col-sm-6">
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var purpose in chunk)
+                                            {
+                                                <a class="list-group-item list-group-item-action"
+                                                   asp-area="Web"
+                                                   asp-controller="Home"
+                                                   asp-action="AllCampaigns"
+                                                   asp-route-category="@purpose.Title">
+                                                    @purpose.Title
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Button: View All Purposes -->
+                            @if (remainingPurposes.Any())
+                            {
+                                <button class="btn btn-link mt-3 px-0" data-bs-toggle="modal" data-bs-target="#allPurposeModal">
+                                    <i class="bi bi-list-ul me-1"></i> View More
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Sidebar: Urgent Campaigns -->
+                @{
+                    var urgentCampaigns = ViewBag.UrgentCampaigns as List<Fe.DTOs.Campaigns.CampaignDto> ?? new();
+                }
+                @if (urgentCampaigns.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">Urgent Support Programs</div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var campaign in urgentCampaigns)
+                            {
+                                <li class="list-group-item">
+                                    <a asp-area="Web"
+                                       asp-controller="Home"
+                                       asp-action="Post"
+                                       asp-route-id="@campaign.CampaignId"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @campaign.Title
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <!-- Sidebar: Get Notifications -->
                 <div class="card mb-4">
                     <div class="card-header">Stay Informed</div>
                     <div class="card-body">
@@ -157,12 +259,12 @@
                     </div>
                 </div>
 
-                <!-- Donate Widget -->
+                <!-- Sidebar: Donate Now -->
                 <div class="card mb-4">
                     <div class="card-header">Make a Difference</div>
                     <div class="card-body">
                         <p class="mb-2">
-                            Would you like to donate to the <strong>@ViewBag.Title</strong> program?
+                            You can bring <strong>@Model.Title</strong> to life. Every small donation counts toward something bigger.
                         </p>
                         <a class="btn btn-outline-danger w-100"
                            data-bs-toggle="modal"
@@ -175,6 +277,114 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
+
+<!-- Modal: View All Support Purposes -->
+@if (remainingPurposes.Any())
+{
+    <div class="modal fade" id="allPurposeModal" tabindex="-1" aria-labelledby="allPurposeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="allPurposeModalLabel">All Purposes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        @foreach (var chunk in allChunks)
+                        {
+                            <div class="col-sm-6">
+                                <div class="list-group list-group-flush mb-3">
+                                    @foreach (var purpose in chunk)
+                                    {
+                                        <a class="list-group-item list-group-item-action"
+                                           asp-area="Web"
+                                           asp-controller="Home"
+                                           asp-action="AllCampaigns"
+                                           asp-route-category="@purpose.Title"
+                                           data-bs-dismiss="modal">
+                                            @purpose.Title
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Styling for article content -->
+<style>
+    .content-style h2, .content-style h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .content-style img {
+        max-width: 100%;
+        border-radius: .5rem;
+        margin: 1rem 0;
+    }
+
+    .content-style p {
+        line-height: 1.8;
+    }
+
+    .btn-link {
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+</style>
+
+<!-- Script: Handle redirect after closing modal -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('#allPurposeModal a[data-bs-dismiss="modal"]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetUrl = this.href;
+
+                const modalEl = document.getElementById('allPurposeModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalInstance.hide();
+
+                setTimeout(() => {
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                    window.location.href = targetUrl;
+                }, 400);
+            });
+        });
+    });
+</script>
+
+<!-- Script: Filter collaborators by search -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("partnerSearchInput").addEventListener("input", function () {
+            const keyword = this.value.toLowerCase();
+            document.querySelectorAll("#partnerList li").forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(keyword) ? "block" : "none";
+            });
+        });
+
+        document.getElementById("ngoSearchInput").addEventListener("input", function () {
+            const keyword = this.value.toLowerCase();
+            document.querySelectorAll("#ngoList li").forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(keyword) ? "block" : "none";
+            });
+        });
+    });
+</script>

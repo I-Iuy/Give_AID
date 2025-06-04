@@ -1,34 +1,126 @@
-﻿@model Fe.Areas.Admin.Controllers.ContentPagesController.ContentPageModel
+﻿@using Newtonsoft.Json
+@model Fe.DTOs.ContentPages.ContentPageDto
+
 @{
-    ViewData["Title"] = "Edit Page";
-    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Edit Content Page"; // Set page title for browser tab and layout
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml"; // Use Admin shared layout
 }
 
+<!-- Container for the content page editor -->
 <div class="container-fluid px-4">
+
+    <!-- Page header -->
     <h1 class="mt-4">Edit Page</h1>
+
+    <!-- Breadcrumb navigation -->
     <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
-        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="ContentPages" asp-action="List">Pages</a></li>
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a asp-area="Admin" asp-controller="ContentPages" asp-action="List">Content Pages</a>
+        </li>
         <li class="breadcrumb-item active">Edit</li>
     </ol>
 
-    <div class="card mb-4">
+    <!-- Card component for form -->
+    <div class="card shadow mb-4">
+
+        <!-- Card header -->
+        <div class="card-header bg-warning text-dark fw-bold">
+            <i class="fas fa-edit me-2"></i>Update Page Information
+        </div>
+
+        <!-- Card body with the form -->
         <div class="card-body">
-            <form>
+            <!-- Form to submit updated content -->
+            <form asp-action="Edit" method="post" onsubmit="updateContent()">
+
+                <!-- Hidden field for ID -->
+                <input type="hidden" asp-for="Id" />
+
+                <!-- Page Title -->
                 <div class="mb-3">
-                    <label class="form-label">Page Title</label>
-                    <input type="text" class="form-control" name="Title" value="@Model.Title" />
+                    <label asp-for="Title" class="form-label">Title</label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
+
+                <!-- Slug (read-only) -->
+                <div class="mb-3">
+                    <label asp-for="Slug" class="form-label">Slug</label>
+                    <input asp-for="Slug" class="form-control" readonly />
+                </div>
+
+                <!-- Author (read-only) -->
+                <div class="mb-3">
+                    <label asp-for="Author" class="form-label">Author</label>
+                    <input asp-for="Author" class="form-control" readonly />
+                </div>
+
+                <!-- Rich Text Editor for Content -->
                 <div class="mb-3">
                     <label class="form-label">Content</label>
-                    <textarea class="form-control" name="Content" rows="6">@Model.Content</textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save
-                </button>
-                <button type="reset" class="btn btn-secondary">Cancel</button>
 
+                    <!-- Quill Editor (visible rich text editor) -->
+                    <div id="quillEditor" style="height: 250px;"></div>
+
+                    <!-- Hidden input to submit actual HTML content -->
+                    <input type="hidden" name="Content" id="descriptionInput" asp-for="Content" />
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+
+                <!-- Save / Cancel buttons -->
+                <div class="d-flex justify-content-end">
+                    <!-- Submit changes -->
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-save me-1"></i> Save
+                    </button>
+
+                    <!-- Cancel and return to list -->
+                    <a asp-action="List" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Cancel
+                    </a>
+                </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Page-specific scripts -->
+@section Scripts {
+    <!-- Quill Editor library -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" />
+
+    <script>
+        var quill;
+
+        // Initialize Quill editor when DOM is ready
+        document.addEventListener("DOMContentLoaded", function () {
+            quill = new Quill('#quillEditor', {
+                theme: 'snow',
+                placeholder: 'Edit your content here...',
+                modules: {
+                    toolbar: [
+                        ['image'],
+                        [{ header: [1, 2, false] }],
+                        ['bold', 'italic', 'underline'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['clean']
+                    ]
+                }
+            });
+
+            // Set initial content from the model into Quill editor
+            var initialContent = @Html.Raw(JsonConvert.SerializeObject(Model?.Content ?? ""));
+            quill.root.innerHTML = initialContent;
+        });
+
+        // Before form submission, update hidden input with HTML content from Quill
+        function updateContent() {
+            document.getElementById('descriptionInput').value = quill.root.innerHTML;
+            return true;
+        }
+    </script>
+}

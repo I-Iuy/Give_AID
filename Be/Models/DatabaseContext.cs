@@ -20,8 +20,9 @@ namespace Be.Models
         public DbSet<CampaignPartner> CampaignPartners { get; set; }
         public DbSet<CampaignNgo> CampaignNgos { get; set; }
         // Migration: Add-Migration Init4
-        public DbSet<Donation> Donations { get; set; } 
-
+        public DbSet<Donation> Donations { get; set; }
+        // Migration: Add-Migration Init5
+        public DbSet<ContentPage> ContentPages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
