@@ -1,4 +1,5 @@
 ﻿using Fe.Dtos.Ngos;
+using Fe.DTOs.Campaigns;
 using Fe.DTOs.Partners;
 using Fe.DTOs.Purposes;
 using Newtonsoft.Json;
@@ -14,7 +15,7 @@ namespace Fe.Services.Getdata
             _httpClient = httpClient;
             _baseUrl = configuration["ApiSettings:BaseUrl"];
         }
-        // Get all purposes, partners, and NGOs from the API
+        // Get all purposes, partners, and NGOs, campaigns from the API
         public async Task<List<PurposeDto>> GetAllPurposesAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}/api/purpose");
@@ -37,6 +38,12 @@ namespace Fe.Services.Getdata
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<List<NgoDto>>(json);
         }
-
+        public async Task<List<CampaignDto>> GetAllCampaignsAsync()
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}/api/campaign");
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<List<CampaignDto>>(json);
+        }
     }
 }
