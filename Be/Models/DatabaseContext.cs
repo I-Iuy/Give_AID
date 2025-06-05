@@ -13,8 +13,6 @@ namespace Be.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // Ánh xạ tên bảng
             modelBuilder.Entity<Account>().ToTable("ACCOUNT");
 
         }

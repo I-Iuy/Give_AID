@@ -9,28 +9,33 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ========================================
+// Add services to the dependency container
+// ========================================
 
 builder.Services.AddControllers();
 
-// JwtService
+// JWT token generator service
 builder.Services.AddScoped<JwtService>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<DatabaseContext>(options => 
-        options.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")));
+// Database connection using SQL Server
+builder.Services.AddDbContext<DatabaseContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")));
 
-// Inject Repo
-
+// Account repository (business logic for accounts)
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
-//Inject EmailService
+// Email service for sending reset emails
 builder.Services.AddScoped<EmailService>();
 
-// Configure JWT authentication
+// ========================================
+// Configure JWT Authentication middleware
+// ========================================
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -40,32 +45,41 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
+        ValidateIssuer = true, // Validate the token issuer
+        ValidateAudience = true, // Validate the token audience
+        ValidateLifetime = true, // Validate token expiration
+        ValidateIssuerSigningKey = true, // Validate the signing key
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
+    // Maps the Role claim type for role-based authorization
     options.TokenValidationParameters.RoleClaimType = ClaimTypes.Role;
 });
 
+// =======================
+// Build and run the app
+// =======================
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Enable Swagger UI in development mode only
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Enforce HTTPS
 app.UseHttpsRedirection();
 
+// Enable authentication and authorization middleware
+app.UseAuthentication();
 app.UseAuthorization();
 
+// Map controller routes
 app.MapControllers();
 
+// Start the application
 app.Run();

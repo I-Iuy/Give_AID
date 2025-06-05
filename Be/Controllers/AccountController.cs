@@ -1,4 +1,8 @@
-﻿using Be.DTOs.Account;
+﻿// ========================
+// AccountsController.cs
+// ========================
+
+using Be.DTOs.Account;
 using Be.Models;
 using Be.Repositories.Accounts;
 using Be.Services;
@@ -30,6 +34,10 @@ namespace Be.Controllers
             _emailService = emailService;
         }
 
+        // -------------------------------
+        // POST: api/accounts/register
+        // Handles user registration
+        // -------------------------------
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] AccountRegisterDto dto)
         {
@@ -63,6 +71,10 @@ namespace Be.Controllers
             return Ok(new { message = "Registration successful", result.AccountId });
         }
 
+        // -------------------------------
+        // POST: api/accounts/login
+        // Handles user login
+        // -------------------------------
         [HttpPost("login")]
         public async Task<IActionResult> Login(AccountLoginDto dto)
         {
@@ -70,6 +82,9 @@ namespace Be.Controllers
 
             if (account == null)
                 return Unauthorized("Invalid credentials or inactive account.");
+
+            if (!account.IsActive)
+                return Unauthorized("Your account has been blocked. Please contact support.");
 
             if (string.IsNullOrEmpty(account.Password))
                 return Unauthorized("This email was registered using Google. Please log in using Google instead.");
@@ -81,6 +96,10 @@ namespace Be.Controllers
             return Ok(new { token });
         }
 
+        // -------------------------------
+        // GET: api/accounts/me
+        // Returns profile of currently logged-in user
+        // -------------------------------
         [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetMyInfo()
@@ -106,6 +125,10 @@ namespace Be.Controllers
             return Ok(dto);
         }
 
+        // -------------------------------
+        // PUT: api/accounts/{id}/status
+        // Admin-only: activates or deactivates a user
+        // -------------------------------
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> SetStatus(int id, [FromQuery] bool isActive)
@@ -115,6 +138,10 @@ namespace Be.Controllers
             return Ok(new { message = $"Account {(isActive ? "activated" : "deactivated")} successfully." });
         }
 
+        // -------------------------------
+        // POST: api/accounts/google-login
+        // Handles Google-based login
+        // -------------------------------
         [HttpPost("google-login")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
         {
@@ -156,6 +183,10 @@ namespace Be.Controllers
             return Ok(new { token });
         }
 
+        // -------------------------------
+        // POST: api/accounts/forgot-password
+        // Sends a reset link to the user's email
+        // -------------------------------
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
@@ -182,6 +213,10 @@ namespace Be.Controllers
             }
         }
 
+        // -------------------------------
+        // POST: api/accounts/reset-password
+        // Resets user's password using token
+        // -------------------------------
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
         {
@@ -192,6 +227,10 @@ namespace Be.Controllers
             return Ok(new { message = "Password reset successfully." });
         }
 
+        // -------------------------------
+        // PUT: api/accounts/update
+        // Updates user profile
+        // -------------------------------
         [Authorize]
         [HttpPut("update")]
         public async Task<IActionResult> UpdateProfile([FromBody] AccountUpdateDto dto)
@@ -205,6 +244,10 @@ namespace Be.Controllers
             return Ok(new { message = "Profile updated successfully." });
         }
 
+        // -------------------------------
+        // PUT: api/accounts/change-password
+        // Allows user to change password
+        // -------------------------------
         [Authorize]
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
@@ -228,6 +271,10 @@ namespace Be.Controllers
             return Ok(new { message = "Password changed successfully." });
         }
 
+        // -------------------------------
+        // GET: api/accounts/all
+        // Admin-only: gets list of all accounts with filtering/sorting
+        // -------------------------------
         [Authorize(Roles = "Admin")]
         [HttpGet("all")]
         public async Task<IActionResult> GetAllAccounts([FromQuery] string? search = null, [FromQuery] string? role = null, [FromQuery] string sortBy = "FullName", [FromQuery] bool desc = false)
@@ -274,6 +321,10 @@ namespace Be.Controllers
             return Ok(result);
         }
 
+        // -------------------------------
+        // GET: api/accounts/{id}
+        // Admin-only: get single account by ID
+        // -------------------------------
         [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAccountById(int id)

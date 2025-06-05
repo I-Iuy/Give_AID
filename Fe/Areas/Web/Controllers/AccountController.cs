@@ -1,4 +1,9 @@
-﻿using Fe.ViewModels;
+﻿// ==============================
+// AccountController (Frontend)
+// Handles login, registration, password reset, etc.
+// ==============================
+
+using Fe.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System.Text;
@@ -21,9 +26,11 @@ namespace Fe.Areas.Web.Controllers
             _config = config;
         }
 
+        // Render the login page
         [HttpGet]
         public IActionResult Login() => View();
 
+        // Handle login form submission
         [HttpPost]
         public async Task<IActionResult> Login(AccountLoginViewModel model)
         {
@@ -50,12 +57,14 @@ namespace Fe.Areas.Web.Controllers
                 return View(model);
             }
 
+            // Store JWT token in session
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonDoc = JsonDocument.Parse(responseBody);
             var token = jsonDoc.RootElement.GetProperty("token").GetString();
 
             HttpContext.Session.SetString("JWT", token);
 
+            // Get user info and store in session
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var meResponse = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}accounts/me");
 
@@ -72,9 +81,11 @@ namespace Fe.Areas.Web.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        // Render the registration form
         [HttpGet]
         public IActionResult Register() => View();
 
+        // Handle registration submission
         [HttpPost]
         public async Task<IActionResult> Register(AccountRegisterViewModel model)
         {
@@ -127,12 +138,11 @@ namespace Fe.Areas.Web.Controllers
             return View(model);
         }
 
-
-
-
+        // Render forgot password form
         [HttpGet]
         public IActionResult ForgotPassword() => View();
 
+        // Handle forgot password form submission
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
@@ -153,6 +163,7 @@ namespace Fe.Areas.Web.Controllers
             return View(model);
         }
 
+        // Render reset password form
         [HttpGet]
         public IActionResult ResetPassword(string token)
         {
@@ -162,6 +173,7 @@ namespace Fe.Areas.Web.Controllers
             return View(new ResetPasswordViewModel { Token = token });
         }
 
+        // Handle reset password submission
         [HttpPost]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
@@ -190,6 +202,7 @@ namespace Fe.Areas.Web.Controllers
             return View(model);
         }
 
+        // Logout and clear session
         [HttpGet]
         public IActionResult Logout()
         {
@@ -199,6 +212,7 @@ namespace Fe.Areas.Web.Controllers
             return RedirectToAction("Login");
         }
 
+        // Handle Google login callback
         [HttpPost]
         public async Task<IActionResult> GoogleCallback([FromBody] GoogleLoginDto model)
         {
@@ -214,6 +228,7 @@ namespace Fe.Areas.Web.Controllers
 
             HttpContext.Session.SetString("JWT", jwt);
 
+            // Retrieve user info and store session
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
             var meResponse = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}accounts/me");
 
@@ -229,6 +244,7 @@ namespace Fe.Areas.Web.Controllers
             return Ok();
         }
 
+        // Display current user profile
         [HttpGet]
         public async Task<IActionResult> MyAccount()
         {
@@ -252,9 +268,11 @@ namespace Fe.Areas.Web.Controllers
             return View(user);
         }
 
+        // Render change password form
         [HttpGet]
         public IActionResult ChangePassword() => View();
 
+        // Handle change password form submission
         [HttpPost]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {

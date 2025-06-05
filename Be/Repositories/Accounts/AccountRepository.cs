@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-
 public class AccountRepository : IAccountRepository
 {
     private readonly DatabaseContext _context;
@@ -15,12 +14,15 @@ public class AccountRepository : IAccountRepository
         _context = context;
     }
 
+    // Get all accounts
     public async Task<List<Account>> GetAllAsync()
         => await _context.Accounts.ToListAsync();
 
+    // Get account by ID
     public async Task<Account?> GetByIdAsync(int id)
         => await _context.Accounts.FindAsync(id);
 
+    // Create new account
     public async Task<Account> CreateAsync(Account account)
     {
         _context.Accounts.Add(account);
@@ -28,7 +30,7 @@ public class AccountRepository : IAccountRepository
         return account;
     }
 
-    //Admin Update all entity
+    // Admin: update all account fields
     public async Task<Account?> UpdateAsync(Account account)
     {
         var acc = await _context.Accounts.FindAsync(account.AccountId);
@@ -39,6 +41,7 @@ public class AccountRepository : IAccountRepository
         return acc;
     }
 
+    // Delete account by ID
     public async Task<bool> DeleteAsync(int id)
     {
         var acc = await _context.Accounts.FindAsync(id);
@@ -49,12 +52,14 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
+    // Login by email (no password check here, only active status)
     public async Task<Account?> LoginAsync(string email, string _)
     {
         return await _context.Accounts
             .FirstOrDefaultAsync(a => a.Email == email && a.IsActive);
     }
 
+    // Admin: set active/inactive status
     public async Task<bool> SetAccountStatusAsync(int id, bool isActive)
     {
         var acc = await _context.Accounts.FindAsync(id);
@@ -65,13 +70,13 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
-
-    //Reset Password (User forgot password)
+    // Get account by reset token (used in password reset)
     public async Task<Account?> GetByResetTokenAsync(string token)
     {
         return await _context.Accounts.FirstOrDefaultAsync(a => a.ResetToken == token && a.ResetTokenExpires > DateTime.UtcNow);
     }
 
+    // Set password reset token and expiry
     public async Task<bool> SetResetTokenAsync(string email, string token, DateTime expires)
     {
         var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
@@ -83,6 +88,7 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
+    // Reset password by token
     public async Task<bool> ResetPasswordAsync(string token, string newHashedPassword)
     {
         var account = await _context.Accounts.FirstOrDefaultAsync(a => a.ResetToken == token && a.ResetTokenExpires > DateTime.UtcNow);
@@ -95,7 +101,7 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
-    //User Update Account Info
+    // User updates their own profile information
     public async Task<bool> UpdateAccountInfoAsync(int id, AccountUpdateDto dto)
     {
         var account = await _context.Accounts.FindAsync(id);
@@ -109,23 +115,23 @@ public class AccountRepository : IAccountRepository
         return true;
     }
 
-    // User change Pasword
+    // User changes password with current password verification
     public async Task<int> ChangePasswordAsync(int id, string currentPassword, string newHashedPassword)
     {
         var account = await _context.Accounts.FindAsync(id);
         if (account == null || !account.IsActive) return 0;
 
         if (!BCrypt.Net.BCrypt.Verify(currentPassword, account.Password))
-            return 1;
+            return 1; // current password incorrect
 
         account.Password = newHashedPassword;
         await _context.SaveChangesAsync();
-        return 2;
+        return 2; // success
     }
 
+    // Get account by email (used in registration validation and password reset)
     public async Task<Account?> GetByEmailAsync(string email)
     {
         return await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
     }
-
 }

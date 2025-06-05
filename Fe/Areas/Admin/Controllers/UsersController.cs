@@ -1,4 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// ==============================
+// UsersController (Admin Area)
+// Handles user list, detail, and status toggling for admin panel
+// ==============================
+
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -17,6 +22,7 @@ namespace Fe.Areas.Admin.Controllers
             _config = config;
         }
 
+        // Represents user summary data
         public class User
         {
             public int AccountId { get; set; }
@@ -27,6 +33,7 @@ namespace Fe.Areas.Admin.Controllers
             public bool IsActive { get; set; }
         }
 
+        // Represents detailed user profile data
         public class UserDetail
         {
             public int AccountId { get; set; }
@@ -39,7 +46,7 @@ namespace Fe.Areas.Admin.Controllers
             public bool IsActive { get; set; }
         }
 
-        // GET: Admin/Users/List
+        // Display user list with filtering, sorting, and role search
         public async Task<IActionResult> List(string? search, string? role, string sortBy = "FullName", bool desc = false)
         {
             var client = _clientFactory.CreateClient();
@@ -50,6 +57,7 @@ namespace Fe.Areas.Admin.Controllers
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+            // Build API URL with optional parameters
             var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/all?sortBy={sortBy}&desc={desc.ToString().ToLower()}";
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -69,7 +77,7 @@ namespace Fe.Areas.Admin.Controllers
             var json = await response.Content.ReadAsStringAsync();
             var users = JsonSerializer.Deserialize<List<User>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            // Lưu lại giá trị tìm kiếm để giữ UI
+            // Store filtering and sorting state in ViewBag
             ViewBag.Search = search;
             ViewBag.Role = role;
             ViewBag.SortBy = sortBy;
@@ -78,7 +86,7 @@ namespace Fe.Areas.Admin.Controllers
             return View(users);
         }
 
-        // POST: Admin/Users/ToggleStatus
+        // Toggle user active status (block/unblock)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id, bool isActive)
@@ -108,7 +116,8 @@ namespace Fe.Areas.Admin.Controllers
             return RedirectToAction("List");
         }
 
-        // GET: Admin/Users/Details/{id}
+        // Show user details by ID
+        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
             var client = _clientFactory.CreateClient();
