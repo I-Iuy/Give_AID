@@ -63,5 +63,30 @@ namespace Fe.Services.Notification
             var result = await _httpClient.GetFromJsonAsync<List<UserNotificationDto>>($"{_baseUrl}/api/notification/by-campaign/{campaignId}");
             return result ?? new List<UserNotificationDto>();
         }
+
+        public async Task<(IEnumerable<UserNotificationDto> notifications, int totalCount)> GetPaginatedNotificationsAsync(int pageNumber, int pageSize)
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}/api/notification?pageNumber={pageNumber}&pageSize={pageSize}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // Handle error appropriately, maybe log it
+                return (new List<UserNotificationDto>(), 0);
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<PaginatedNotificationResult>();
+            // Ensure result is not null before accessing properties
+            return (result?.Notifications ?? new List<UserNotificationDto>(), result?.TotalCount ?? 0);
+        }
+    }
+
+    // Define the DTO for paginated results returned by the backend API
+    public class PaginatedNotificationResult
+    {
+        public IEnumerable<UserNotificationDto> Notifications { get; set; }
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
     }
 }

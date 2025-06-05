@@ -34,6 +34,26 @@ namespace Be.Services.EmailService
             return $"{baseUrl}/Web/Home/Post/{campaignId}";
         }
 
+        // Method to send a general notification email
+        public async Task SendNotificationEmailAsync(string toEmail, string title, string message, int? campaignId = null)
+        {
+            var frontendBaseUrl = _config["AppSettings:FrontendBaseUrl"] ?? "https://localhost:7108";
+            
+            var body = $"<p>Hello,</p>" +
+                       $"<p>You have a new notification:</p>" +
+                       $"<h3>{title}</h3>" +
+                       $"<p>{message}</p>";
+
+            if (campaignId.HasValue)
+            {
+                body += $"<p><a href='{frontendBaseUrl}/Web/Home/Post/{campaignId}'>View related campaign</a></p>";
+            }
+
+            body += "<br/><p>Best regards,<br/>CharityHub Team</p>";
+
+            await SendAsync(toEmail, title, body);
+        }
+
         // Generic method to send an email
         public async Task SendAsync(string toEmail, string subject, string body)
         {

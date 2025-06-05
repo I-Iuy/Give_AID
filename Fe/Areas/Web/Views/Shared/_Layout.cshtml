@@ -38,6 +38,208 @@
     <script src="~/js/datatables-simple-demo.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
+    <script>
+        // Get AccountId if user is authenticated
+        let currentAccountId = null;
+        // Get AccountId from ViewBag (set by the Controller)
+        @if (ViewBag.AccountId != null)
+        {
+            <text>currentAccountId = @ViewBag.AccountId;</text>
+        }
+
+        const notificationCountSpan = document.getElementById('notificationCount');
+        const notificationListUl = document.getElementById('notificationList');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+
+        // Function to fetch notifications
+        async function fetchNotifications() {
+            if (!currentAccountId) return;
+
+            try {
+                const response = await fetch(`/api/notification/account/${currentAccountId}`);
+                if (!response.ok) {
+                    console.error('Failed to fetch notifications', response.statusText);
+                    notificationListUl.innerHTML = '<li><a class="dropdown-item" href="#">Error loading notifications.</a></li>';
+                    notificationCountSpan.textContent = '0';
+                    return [];
+                }
+
+                const notifications = await response.json();
+                renderNotifications(notifications);
+                updateNotificationCount(notifications);
+                return notifications;
+
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+                notificationListUl.innerHTML = '<li><a class="dropdown-item" href="#">Error loading notifications.</a></li>';
+                notificationCountSpan.textContent = '0';
+                return [];
+            }
+        }
+
+        // Function to render notifications in the dropdown
+        function renderNotifications(notifications) {
+            notificationListUl.innerHTML = ''; // Clear existing items
+
+            if (notifications.length === 0) {
+                notificationListUl.innerHTML = '<li><a class="dropdown-item" href="#">No new notifications.</a></li>';
+                return;
+            }
+
+            notifications.forEach(notification => {
+                const li = document.createElement('li');
+                li.classList.add('dropdown-item-container'); // Add a class for styling if needed
+                li.setAttribute('id', `user-notification-${notification.notificationId}`); // Add ID for easy removal
+
+                // Notification content (title, message, date)
+                const contentLink = document.createElement('a');
+                contentLink.classList.add('dropdown-item', 'notification-item');
+                contentLink.href = notification.campaignId ? `/Web/Home/Post/${notification.campaignId}` : '#';
+                contentLink.innerHTML = `<strong>${notification.title}</strong><br/>${notification.message}<br/><small>${new Date(notification.createdAt).toLocaleString()}</small>`;
+                if (!notification.isRead) {
+                    contentLink.style.fontWeight = 'bold';
+                }
+                contentLink.dataset.notificationId = notification.notificationId;
+
+                // Delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('btn', 'btn-danger', 'btn-sm', 'delete-user-notification');
+                deleteButton.innerHTML = '<i class="bi bi-x"></i>'; // 'x' icon from Bootstrap Icons
+                deleteButton.dataset.id = notification.notificationId;
+                deleteButton.title = 'Delete Notification';
+
+                // Use flexbox or similar to arrange content and delete button
+                li.style.display = 'flex';
+                li.style.justifyContent = 'space-between';
+                li.style.alignItems = 'center';
+
+                // Add some padding/margin between content and button
+                contentLink.style.flexGrow = 1; // Allow content to take up available space
+                contentLink.style.marginRight = '10px'; // Space between content and button
+
+                li.appendChild(contentLink);
+                li.appendChild(deleteButton);
+
+                notificationListUl.appendChild(li);
+            });
+        }
+
+        // Function to update the unread count
+        function updateNotificationCount(notifications) {
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+            notificationCountSpan.textContent = unreadCount > 0 ? unreadCount : ''; // Show count only if > 0
+            notificationCountSpan.classList.toggle('d-none', unreadCount === 0); // Hide badge if count is 0
+        }
+
+        // Function to mark a notification as read
+        async function markAsRead(notificationId) {
+             if (!currentAccountId) return;
+
+             try {
+                 const response = await fetch(`/api/notification/${notificationId}/read`, {
+                     method: 'PUT'
+                 });
+
+                 if (!response.ok) {
+                     console.error(`Failed to mark notification ${notificationId} as read`, response.statusText);
+                 }
+             } catch (error) {
+                 console.error(`Error marking notification ${notificationId} as read:`, error);
+             }
+        }
+
+         // Function to delete a notification
+         async function deleteNotification(notificationId) {
+              if (!currentAccountId) return false; // Cannot delete if no user id
+
+              try {
+                  const response = await fetch(`/api/notification/${notificationId}`, {
+                      method: 'DELETE'
+                  });
+
+                  if (response.ok) {
+                      console.log(`Notification ${notificationId} deleted successfully.`);
+                      return true;
+                  } else if (response.status === 404) {
+                      console.error(`Notification ${notificationId} not found.`);
+                      return false;
+                  } else {
+                      console.error(`Failed to delete notification ${notificationId}`, response.statusText);
+                      return false;
+                  }
+              } catch (error) {
+                  console.error(`Error deleting notification ${notificationId}:`, error);
+                  return false;
+              }
+         }
+
+        // Fetch notifications when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            if (currentAccountId) {
+                fetchNotifications();
+            }
+        });
+
+        // Mark notifications as read when the dropdown is shown
+        if (notificationDropdown) {
+            notificationDropdown.addEventListener('show.bs.dropdown', async () => {
+                // Note: We don't re-fetch here immediately to avoid flickering if many notifications
+                // Marking as read is done based on current list, UI updated, then optional re-fetch later.
+
+                const notificationsToMarkAsRead = Array.from(notificationListUl.querySelectorAll('.notification-item'))
+                    .map(item => ({ id: parseInt(item.dataset.notificationId), isRead: !item.style.fontWeight })); // Simple check for bold style
+
+                const unreadNotifications = notificationsToMarkAsRead.filter(n => !n.isRead);
+
+                for (const notification of unreadNotifications) {
+                     await markAsRead(notification.id);
+                }
+                // Update UI immediately after marking as read
+                 const updatedNotifications = Array.from(notificationListUl.querySelectorAll('.notification-item'));
+                 updatedNotifications.forEach(item => item.style.fontWeight = 'normal');
+                 notificationCountSpan.textContent = '';
+                 notificationCountSpan.classList.add('d-none');
+
+                // Optional: Re-fetch after a short delay to ensure count is accurate if other notifications arrived
+                 setTimeout(fetchNotifications, 1000); // Re-fetch after 1 second
+            });
+
+             // Handle click on notification items (for navigation or marking as read if dropdown doesn't auto-close)
+            notificationListUl.addEventListener('click', (event) => {
+                const target = event.target;
+
+                 // Handle delete button click
+                if (target.closest('.delete-user-notification')) {
+                    const button = target.closest('.delete-user-notification');
+                    const notificationId = parseInt(button.dataset.id);
+                    if (!isNaN(notificationId) && confirm('Bạn có chắc chắn muốn xóa thông báo này không?')) {
+                        deleteNotification(notificationId).then(success => {
+                            if (success) {
+                                // Remove the list item from the UI
+                                const listItem = document.getElementById(`user-notification-${notificationId}`);
+                                if (listItem) {
+                                    listItem.remove();
+                                }
+                                // Re-fetch notifications to update the count correctly
+                                fetchNotifications();
+                            }
+                        });
+                    }
+                }
+
+                 // Handle notification item click (for navigation)
+                 const notificationLink = target.closest('.notification-item');
+                 if (notificationLink && notificationLink.dataset.notificationId) {
+                      // Navigation is handled by the <a> tag's href
+                      // Mark as read is handled when the dropdown is opened
+                      // No need for explicit markAsRead here unless dropdown doesn't close
+                 }
+            });
+        }
+
+
+    </script>
+
 </body>
 
 <!-- AOS CSS -->

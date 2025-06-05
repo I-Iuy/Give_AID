@@ -31,6 +31,21 @@
                         <i class="bi bi-cash-coin"></i>
                     </a>
                 </li>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell"></i>
+                            <span id="notificationCount" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" id="notificationList">
+                            <li><a class="dropdown-item" href="#">Loading notifications...</a></li>
+                             @* Notifications will be loaded here via JavaScript *@
+                        </ul>
+                    </li>
+                }
+
                 <li class="nav-item">
                     <a asp-area="Web" asp-controller="Account" asp-action="Login" class="nav-link" title="Login">
                         <i class="bi bi-person"></i>

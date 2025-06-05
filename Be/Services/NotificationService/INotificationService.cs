@@ -8,5 +8,7 @@ namespace Be.Services.NotificationService
         Task SendToAllUsersAsync(BulkNotificationDto dto);
         Task<IEnumerable<UserNotificationDto>> GetByAccountIdAsync(int accountId);
         Task MarkAsReadAsync(int notificationId);
+        Task<bool> DeleteNotificationAsync(int notificationId);
+        Task<(IEnumerable<UserNotificationDto> notifications, int totalCount)> GetPaginatedNotificationsAsync(int pageNumber, int pageSize);
     }
 }

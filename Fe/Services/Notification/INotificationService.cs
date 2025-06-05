@@ -11,6 +11,7 @@ namespace Fe.Services.Notification
         Task<bool> MarkAsReadAsync(int notificationId);
         Task<List<UserNotificationDto>> GetHistoryAsync();
         Task<List<UserNotificationDto>> GetByCampaignAsync(int campaignId);
+        Task<(IEnumerable<UserNotificationDto> notifications, int totalCount)> GetPaginatedNotificationsAsync(int pageNumber, int pageSize);
         Task<Fe.DTOs.Campaigns.CampaignDto?> GetLatestCampaignFromApi();
     }
 }

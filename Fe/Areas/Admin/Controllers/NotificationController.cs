@@ -24,19 +24,18 @@ namespace Fe.Areas.Admin.Controllers
 
         // ✅ 1. Display subscriber list
         [HttpGet]
-        public async Task<IActionResult> Subscribers()
+        public async Task<IActionResult> Subscribers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}/api/notifications/subscribers";
-            var response = await _httpClient.GetAsync(apiUrl);
+            // Subscribers list will now use the general paginated notifications endpoint for simplicity
+            // In a real application, you might need a specific endpoint for only 'subscribed' users if that's different
+            var (notifications, totalCount) = await _notificationService.GetPaginatedNotificationsAsync(pageNumber, pageSize);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                TempData["ErrorMessage"] = "Failed to load subscribers.";
-                return View(new List<UserNotificationDto>());
-            }
+            ViewBag.PageNumber = pageNumber;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalCount = totalCount;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-            var result = await response.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
-            return View(result ?? new List<UserNotificationDto>());
+            return View(notifications);
         }
 
         // ✅ 2. Send bulk notification
@@ -57,19 +56,16 @@ namespace Fe.Areas.Admin.Controllers
 
         // ✅ 3. Notification history
         [HttpGet]
-        public async Task<IActionResult> History()
+        public async Task<IActionResult> History([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}/api/notifications";
-            var response = await _httpClient.GetAsync(apiUrl);
+            var (notifications, totalCount) = await _notificationService.GetPaginatedNotificationsAsync(pageNumber, pageSize);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                TempData["ErrorMessage"] = "Failed to load notification history.";
-                return View(new List<UserNotificationDto>());
-            }
+            ViewBag.PageNumber = pageNumber;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalCount = totalCount;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-            var result = await response.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
-            return View(result ?? new List<UserNotificationDto>());
+            return View(notifications);
         }
 
         // ✅ 4. Notifications by campaign
@@ -90,7 +86,33 @@ namespace Fe.Areas.Admin.Controllers
             return View(result ?? new List<UserNotificationDto>());
         }
 
-        // ✅ 5. Send the latest campaign as notification
+        // ✅ 5. Get latest campaign info
+        [HttpGet]
+        public async Task<IActionResult> GetLatestCampaign()
+        {
+            var latest = await _notificationService.GetLatestCampaignFromApi();
+            if (latest == null)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "No campaign found."
+                });
+            }
+
+            return Json(new
+            {
+                success = true,
+                campaign = new
+                {
+                    title = latest.Title,
+                    eventDate = latest.EventDate,
+                    campaignId = latest.CampaignId
+                }
+            });
+        }
+
+        // ✅ 6. Send the latest campaign as notification
         [HttpPost]
         public async Task<IActionResult> SendLatestCampaign()
         {
@@ -106,8 +128,8 @@ namespace Fe.Areas.Admin.Controllers
 
             var dto = new BulkNotificationDto
             {
-                Title = latest.Title,
-                Message = latest.Content,
+                Title = $"New Campaign: {latest.Title}",
+                Message = $"A new campaign has been created: {latest.Title}. Click here to view details.",
                 CampaignId = latest.CampaignId
             };
 
@@ -116,7 +138,9 @@ namespace Fe.Areas.Admin.Controllers
             return Json(new
             {
                 success,
-                message = success ? "Latest campaign notification sent successfully." : "Failed to send latest campaign notification."
+                message = success 
+                    ? $"Campaign notification sent successfully to all subscribers." 
+                    : "Failed to send campaign notification."
             });
         }
     }

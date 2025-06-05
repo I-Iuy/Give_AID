@@ -8,10 +8,10 @@
 <div class="container mt-5">
     <h2 class="mb-4">Send Notification to Subscribed Users</h2>
 
-    <!-- ✅ Bootstrap Alert for Result -->
+    <!-- Notification Result Alert -->
     <div id="resultAlert" class="alert d-none" role="alert"></div>
 
-    <!-- ✅ Form to Send Bulk Notification -->
+    <!-- Form to Send Bulk Notification -->
     <div class="card mb-4">
         <div class="card-body">
             <form id="bulkNotificationForm">
@@ -32,20 +32,31 @@
         </div>
     </div>
 
-    <!-- ✅ New Button: Send Latest Campaign Notification -->
+    <!-- Button to Send Latest Campaign Notification -->
     <div class="card mb-4">
         <div class="card-body">
+            <h5 class="card-title">Latest Campaign Notification</h5>
+            <div id="latestCampaignInfo" class="mb-3 d-none">
+                <div class="alert alert-info">
+                    <h6>Campaign Details:</h6>
+                    <p id="campaignTitle" class="mb-1"></p>
+                    <p id="campaignDate" class="mb-1"></p>
+                </div>
+            </div>
             <form id="latestCampaignForm">
                 <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-warning">
-                        Send Notification for Latest Campaign
+                    <button type="button" id="checkLatestCampaign" class="btn btn-info me-2">
+                        <i class="fas fa-sync"></i> Check Latest Campaign
+                    </button>
+                    <button type="submit" class="btn btn-warning" disabled id="sendLatestCampaignBtn">
+                        <i class="fas fa-paper-plane"></i> Send Campaign Notification
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ✅ List of Subscribed Users -->
+    <!-- List of Subscribed Users -->
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Subscribed Users</h5>
@@ -83,11 +94,34 @@
             </table>
         </div>
     </div>
+
+    @* Pagination Controls *@
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            @* Previous Page Button *@
+            <li class="page-item @(ViewBag.PageNumber <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-area="Admin" asp-controller="Notification" asp-action="Subscribers" asp-route-pageNumber="@(ViewBag.PageNumber - 1)" asp-route-pageSize="@(ViewBag.PageSize)">Previous</a>
+            </li>
+
+            @* Page Number Links *@
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-area="Admin" asp-controller="Notification" asp-action="Subscribers" asp-route-pageNumber="@i" asp-route-pageSize="@(ViewBag.PageSize)">@i</a>
+                </li>
+            }
+
+            @* Next Page Button *@
+            <li class="page-item @(ViewBag.PageNumber >= ViewBag.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-area="Admin" asp-controller="Notification" asp-action="Subscribers" asp-route-pageNumber="@(ViewBag.PageNumber + 1)" asp-route-pageSize="@(ViewBag.PageSize)">Next</a>
+            </li>
+        </ul>
+    </nav>
 </div>
 
 @section Scripts {
     <script>
-        // Existing form: send custom notification
+        // Form to send custom notification
         document.getElementById('bulkNotificationForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
@@ -126,9 +160,45 @@
             }
         });
 
-        // New form: send latest campaign notification
+        // Check latest campaign
+        document.getElementById('checkLatestCampaign').addEventListener('click', async function () {
+            try {
+                const response = await fetch('/Admin/Notification/GetLatestCampaign', {
+                    method: 'GET'
+                });
+
+                const result = await response.json();
+                const campaignInfo = document.getElementById('latestCampaignInfo');
+                const sendButton = document.getElementById('sendLatestCampaignBtn');
+
+                if (result.success && result.campaign) {
+                    campaignInfo.classList.remove('d-none');
+                    document.getElementById('campaignTitle').textContent = `Title: ${result.campaign.title}`;
+                    document.getElementById('campaignDate').textContent = `Date: ${new Date(result.campaign.eventDate).toLocaleDateString()}`;
+                    sendButton.disabled = false;
+                } else {
+                    campaignInfo.classList.add('d-none');
+                    sendButton.disabled = true;
+                    const alert = document.getElementById('resultAlert');
+                    alert.classList.remove('d-none');
+                    alert.classList.add('alert-warning');
+                    alert.textContent = 'No active campaign found.';
+                }
+            } catch (error) {
+                const alert = document.getElementById('resultAlert');
+                alert.classList.remove('d-none');
+                alert.classList.add('alert-danger');
+                alert.textContent = 'Error checking latest campaign.';
+            }
+        });
+
+        // Form to send latest campaign notification
         document.getElementById('latestCampaignForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+
+            if (!confirm('Are you sure you want to send notifications for this campaign?')) {
+                return;
+            }
 
             try {
                 const response = await fetch('/Admin/Notification/SendLatestCampaign', {
@@ -141,11 +211,16 @@
                 alert.classList.remove('d-none', 'alert-success', 'alert-danger');
                 alert.classList.add(result.success ? 'alert-success' : 'alert-danger');
                 alert.textContent = result.message;
+
+                if (result.success) {
+                    document.getElementById('sendLatestCampaignBtn').disabled = true;
+                    document.getElementById('latestCampaignInfo').classList.add('d-none');
+                }
             } catch (error) {
                 const alert = document.getElementById('resultAlert');
                 alert.classList.remove('d-none');
                 alert.classList.add('alert-danger');
-                alert.textContent = 'An error occurred while sending the latest campaign.';
+                alert.textContent = 'Error sending campaign notification.';
             }
         });
     </script>

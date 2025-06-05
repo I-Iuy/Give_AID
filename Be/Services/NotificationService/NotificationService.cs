@@ -59,7 +59,7 @@ namespace Be.Services.NotificationService
             var emails = await _notificationRepository.GetAllUserEmailsAsync();
             foreach (var email in emails)
             {
-                await _emailService.SendAsync(email, dto.Title, dto.Message);
+                await _emailService.SendNotificationEmailAsync(email, dto.Title, dto.Message, dto.CampaignId);
             }
         }
 
@@ -88,6 +88,36 @@ namespace Be.Services.NotificationService
         {
             await _notificationRepository.MarkAsReadAsync(notificationId);
             await _notificationRepository.SaveChangesAsync();
+        }
+
+        public async Task<bool> DeleteNotificationAsync(int notificationId)
+        {
+            var notificationToDelete = await _notificationRepository.GetByIdAsync(notificationId);
+            if (notificationToDelete == null)
+            {
+                return false; // Notification not found
+            }
+
+            _notificationRepository.Delete(notificationToDelete);
+            await _notificationRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<(IEnumerable<UserNotificationDto> notifications, int totalCount)> GetPaginatedNotificationsAsync(int pageNumber, int pageSize)
+        {
+            var (notifications, totalCount) = await _notificationRepository.GetPaginatedAsync(pageNumber, pageSize);
+
+            var notificationDtos = notifications.Select(n => new UserNotificationDto
+            {
+                NotificationId = n.NotificationId,
+                AccountId = n.AccountId,
+                Title = n.Title,
+                Message = n.Message,
+                IsRead = n.IsRead,
+                CreatedAt = n.CreatedAt
+            });
+
+            return (notificationDtos, totalCount);
         }
     }
 }

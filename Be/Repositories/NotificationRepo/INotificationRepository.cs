@@ -11,5 +11,7 @@ namespace Be.Repositories.NotificationRepo
         Task SaveChangesAsync();
         Task<List<string>> GetAllUserEmailsAsync();
         void Delete(UserNotification notification);
+        Task<bool> DeleteNotificationAsync(int notificationId);
+        Task<(IEnumerable<UserNotification> notifications, int totalCount)> GetPaginatedAsync(int pageNumber, int pageSize);
     }
 }

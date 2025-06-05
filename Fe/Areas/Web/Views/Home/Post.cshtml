@@ -305,9 +305,20 @@
                     <div class="card-header">Stay Informed</div>
                     <div class="card-body">
                         <p class="mb-3">Would you like to receive updates about future programs?</p>
-                        <a class="btn btn-outline-primary w-100" href="#">
-                            <i class="bi bi-bell-fill"></i> Get Notifications
-                        </a>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <form asp-area="Web" asp-controller="Notification" asp-action="Subscribe" method="post">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-bell-fill"></i> Subscribe to Notifications
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a asp-area="Web" asp-controller="Account" asp-action="Login" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-box-arrow-in-right"></i> Login to Subscribe
+                            </a>
+                        }
                     </div>
                 </div>
 

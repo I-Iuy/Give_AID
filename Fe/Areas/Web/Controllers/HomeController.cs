@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Fe.DTOs.Comment;
+using System.Security.Claims;
 
 namespace Fe.Areas.Web.Controllers
 {
@@ -77,6 +78,14 @@ namespace Fe.Areas.Web.Controllers
 
         public async Task<IActionResult> Index(int page = 1)
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var accountIdString = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (int.TryParse(accountIdString, out int accountId))
+                {
+                    ViewBag.AccountId = accountId;
+                }
+            }
             const int PageSize = 6;
             var campaigns = await _campaignService.GetAllAsync();
 
@@ -105,6 +114,14 @@ namespace Fe.Areas.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> CampaignListPartial(int page = 1)
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var accountIdString = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (int.TryParse(accountIdString, out int accountId))
+                {
+                    ViewBag.AccountId = accountId;
+                }
+            }
             const int PageSize = 6;
             var campaigns = await _campaignService.GetAllAsync();
 
@@ -128,6 +145,14 @@ namespace Fe.Areas.Web.Controllers
 
         public async Task<IActionResult> Post(int id, bool returnToAll = false)
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var accountIdString = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (int.TryParse(accountIdString, out int accountId))
+                {
+                    ViewBag.AccountId = accountId;
+                }
+            }
             if (id <= 0)
             {
                 TempData["ErrorMessage"] = "Invalid campaign ID.";
@@ -199,12 +224,28 @@ namespace Fe.Areas.Web.Controllers
 
         public IActionResult FilterPartial()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var accountIdString = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (int.TryParse(accountIdString, out int accountId))
+                {
+                    ViewBag.AccountId = accountId;
+                }
+            }
             var model = new DonationFilterModel();
             return PartialView("FilterPartial", model);
         }
 
         public async Task<IActionResult> AllCampaigns(string search, string category, int page = 1)
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var accountIdString = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (int.TryParse(accountIdString, out int accountId))
+                {
+                    ViewBag.AccountId = accountId;
+                }
+            }
             const int PageSize = 6;
             var allCards = await _campaignService.GetAllAsync();
             var query = allCards.AsQueryable();
@@ -240,11 +281,27 @@ namespace Fe.Areas.Web.Controllers
 
         public IActionResult DonationHistory()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var accountIdString = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (int.TryParse(accountIdString, out int accountId))
+                {
+                    ViewBag.AccountId = accountId;
+                }
+            }
             return View();
         }
 
         public IActionResult WhatWeDo()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                var accountIdString = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (int.TryParse(accountIdString, out int accountId))
+                {
+                    ViewBag.AccountId = accountId;
+                }
+            }
             return View();
         }
     }

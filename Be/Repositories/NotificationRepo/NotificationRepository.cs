@@ -56,5 +56,29 @@ namespace Be.Repositories.NotificationRepo
         {
             _context.UserNotifications.Remove(notification);
         }
+
+        public async Task<bool> DeleteNotificationAsync(int notificationId)
+        {
+            var notification = await _context.UserNotifications.FindAsync(notificationId);
+            if (notification != null)
+            {
+                _context.UserNotifications.Remove(notification);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<(IEnumerable<UserNotification> notifications, int totalCount)> GetPaginatedAsync(int pageNumber, int pageSize)
+        {
+            var totalCount = await _context.UserNotifications.CountAsync();
+            var notifications = await _context.UserNotifications
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (notifications, totalCount);
+        }
     }
 }
