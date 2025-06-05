@@ -19,7 +19,4 @@ public class AccountRegisterDto
 
     [Required, MinLength(6)]
     public string Password { get; set; }
-
-    [RegularExpression(@"^\S.*$", ErrorMessage = "Name must not be empty or whitespace.")]
-    public string? Name { get; set; }
 }

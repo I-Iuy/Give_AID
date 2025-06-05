@@ -55,7 +55,6 @@ namespace Be.Controllers
                 DisplayName = dto.DisplayName.Trim(),
                 Phone = dto.Phone.Trim(),
                 Address = dto.Address.Trim(),
-                Name = string.IsNullOrWhiteSpace(dto.Name) ? null : dto.Name.Trim(),
                 Role = "User",
                 IsActive = true
             };

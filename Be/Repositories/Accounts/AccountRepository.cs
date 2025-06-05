@@ -105,8 +105,6 @@ public class AccountRepository : IAccountRepository
         account.DisplayName = dto.DisplayName;
         account.Phone = dto.Phone;
         account.Address = dto.Address;
-        account.Name = dto.Name;
-
         await _context.SaveChangesAsync();
         return true;
     }

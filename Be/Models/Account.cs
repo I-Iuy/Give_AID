@@ -18,8 +18,6 @@ namespace Be.Models
         public string? Phone { get; set; }
         public string? Address { get; set; }
 
-        public string? Name { get; set; }
-
         [Required]
         public string Role { get; set; } // "Admin", "User"
 
@@ -29,8 +27,6 @@ namespace Be.Models
         public string? ResetToken { get; set; }
         public DateTime? ResetTokenExpires { get; set; }
 
-        // Navigation
-        public ICollection<ContentPage>? ContentPages { get; set; }
     }
 
 }
