@@ -3,6 +3,9 @@
 @using System.Linq
 @{
     var comments = ViewBag.Comments as List<CommentDto> ?? new List<CommentDto>();
+    // Only show the 5 most recent comments initially
+    var initialComments = comments.OrderByDescending(c => c.CommentedAt).Take(5).ToList();
+    var remainingComments = comments.OrderByDescending(c => c.CommentedAt).Skip(5).ToList();
     // Debug info
     System.Diagnostics.Debug.WriteLine($"Comments count: {comments.Count}");
     foreach (var comment in comments)
@@ -127,7 +130,8 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="CampaignId" value="@Model.CampaignId" />
                             <div class="form-group mb-3">
-                                <textarea class="form-control" name="Content" rows="3" placeholder="Write your comment here..." required></textarea>
+                                <textarea class="form-control" name="Content" rows="3" placeholder="Write your comment here..." required minlength="3" maxlength="1000"></textarea>
+                                <div class="invalid-feedback">Comment must be between 3 and 1000 characters.</div>
                             </div>
 
                             <div class="form-check mb-3">
@@ -135,8 +139,8 @@
                                 <label class="form-check-label" for="anonymousCheck">Post anonymously</label>
                             </div>
 
-                            <div id="guestNameGroup" class="form-group mb-3" style="display: none;">
-                                <input name="GuestName" class="form-control" placeholder="Your name (required for anonymous comments)" />
+                            <div id="guestNameGroup" class="form-group mb-3">
+                                <input name="GuestName" class="form-control" placeholder="Your name" maxlength="100" />
                             </div>
 
                             <button type="submit" class="btn btn-primary" id="submitButton">
@@ -146,11 +150,11 @@
                         </form>
 
                         <div id="commentsList">
-                            @if (comments.Any())
+                            @if (initialComments.Any())
                             {
-                                foreach (var comment in comments)
+                                foreach (var comment in initialComments)
                                 {
-                                    <div class="d-flex mb-4">
+                                    <div class="d-flex mb-4 comment-item">
                                         <div class="ms-3">
                                             <div class="fw-bold">
                                                 @(comment.IsAnonymous ? "Anonymous" : (comment.GuestName ?? "Guest"))
@@ -170,6 +174,15 @@
                                                 }
                                             }
                                         </div>
+                                    </div>
+                                }
+
+                                @if (remainingComments.Any())
+                                {
+                                    <div class="text-center mt-3">
+                                        <button id="loadMoreBtn" class="btn btn-outline-primary btn-sm" data-skip="5">
+                                            Load More Comments
+                                        </button>
                                     </div>
                                 }
                             }
@@ -412,36 +425,62 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            const form = $('#commentForm');
+            const submitButton = $('#submitButton');
+            const spinner = submitButton.find('.spinner-border');
+            const messageContainer = $('#messageContainer');
+
             // Handle anonymous checkbox
             $('#anonymousCheck').change(function() {
                 if ($(this).is(':checked')) {
-                    $('#guestNameGroup').show();
-                    $('#guestNameGroup input').prop('required', true);
-                } else {
                     $('#guestNameGroup').hide();
-                    $('#guestNameGroup input').prop('required', false);
+                    $('#guestNameGroup input').val(''); // Clear the name input
+                } else {
+                    $('#guestNameGroup').show();
                 }
             });
 
-            // Handle form submit
-            $('#commentForm').submit(function(e) {
+            // Form validation
+            form.on('submit', function(e) {
                 e.preventDefault();
-                
-                const submitButton = $('#submitButton');
-                const spinner = submitButton.find('.spinner-border');
-                const messageContainer = $('#messageContainer');
                 
                 // Clear previous messages
                 messageContainer.empty();
+                
+                // Basic validation
+                const content = form.find('textarea[name="Content"]').val().trim();
+                if (content.length < 3) {
+                    messageContainer.html(
+                        '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                        'Comment must be at least 3 characters long.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                        '</div>'
+                    );
+                    return;
+                }
+
+                if (content.length > 1000) {
+                    messageContainer.html(
+                        '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                        'Comment cannot exceed 1000 characters.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                        '</div>'
+                    );
+                    return;
+                }
                 
                 // Disable button and show spinner
                 submitButton.prop('disabled', true);
                 spinner.removeClass('d-none');
 
+                // Get form data
+                const formData = form.serialize();
+                console.log('Form data:', formData); // Debug log
+
                 $.ajax({
-                    url: $(this).attr('action'),
+                    url: form.attr('action'),
                     type: 'POST',
-                    data: $(this).serialize(),
+                    data: formData,
                     success: function(response) {
                         console.log('Response:', response); // Debug log
                         
@@ -453,8 +492,8 @@
                             $('#commentsList').prepend(response.html);
                             
                             // Reset form
-                            $('#commentForm')[0].reset();
-                            $('#guestNameGroup').hide();
+                            form[0].reset();
+                            $('#guestNameGroup').show(); // Show name input by default
                             
                             // Show success message
                             messageContainer.html(
@@ -476,10 +515,28 @@
                     error: function(xhr, status, error) {
                         console.error('Error:', xhr.responseText); // Debug log
                         
+                        let errorMessage = 'An error occurred while posting your comment. Please try again.';
+                        
+                        // Try to parse the error response
+                        if (xhr.responseText) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                if (response.message) {
+                                    errorMessage = response.message;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing error response:', e);
+                                // If we can't parse the response, try to extract a meaningful message
+                                if (xhr.responseText.includes("System.")) {
+                                    errorMessage = "Server error occurred. Please try again later.";
+                                }
+                            }
+                        }
+                        
                         // Show error message
                         messageContainer.html(
                             '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
-                            'An error occurred while posting your comment. Please try again.' +
+                            errorMessage +
                             '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
                             '</div>'
                         );
@@ -491,6 +548,68 @@
                     }
                 });
             });
+
+            // Load More Comments functionality
+            $('#loadMoreBtn').on('click', function() {
+                const button = $(this);
+                const skip = parseInt(button.data('skip'));
+                const campaignId = @Model.CampaignId;
+
+                $.ajax({
+                    url: '@Url.Action("LoadMoreComments", "Comment")',
+                    type: 'GET',
+                    data: { 
+                        campaignId: campaignId,
+                        skip: skip,
+                        take: 5
+                    },
+                    success: function(response) {
+                        if (response.success && response.comments.length > 0) {
+                            // Append new comments
+                            response.comments.forEach(function(comment) {
+                                const commentHtml = createCommentHtml(comment);
+                                $('#commentsList').find('.comment-item').last().after(commentHtml);
+                            });
+
+                            // Update skip value
+                            button.data('skip', skip + 5);
+
+                            // Hide button if no more comments
+                            if (response.comments.length < 5) {
+                                button.hide();
+                            }
+                        } else {
+                            button.hide();
+                        }
+                    },
+                    error: function() {
+                        showToast('Error', 'Failed to load more comments', 'error');
+                    }
+                });
+            });
+
+            // Helper function to create comment HTML
+            function createCommentHtml(comment) {
+                return `
+                    <div class="d-flex mb-4 comment-item">
+                        <div class="ms-3">
+                            <div class="fw-bold">
+                                ${comment.isAnonymous ? 'Anonymous' : (comment.guestName || 'Guest')}
+                                <span class="text-muted small">– ${new Date(comment.commentedAt).toLocaleString()}</span>
+                            </div>
+                            <p>${comment.content}</p>
+                            ${comment.replies && comment.replies.length > 0 ? 
+                                comment.replies.map(reply => `
+                                    <div class="mt-2 ms-4 p-2 border rounded bg-light">
+                                        <div class="fw-bold text-primary">${reply.guestName}:</div>
+                                        <div class="text-muted small">${new Date(reply.commentedAt).toLocaleString()}</div>
+                                        <p>${reply.content}</p>
+                                    </div>
+                                `).join('') : ''}
+                        </div>
+                    </div>
+                `;
+            }
         });
     </script>
     <script>

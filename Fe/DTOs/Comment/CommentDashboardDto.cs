@@ -8,5 +8,6 @@
         public int CampaignId { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsReplied { get; set; }
+        public bool IsAnonymous { get; set; }
     }
 }

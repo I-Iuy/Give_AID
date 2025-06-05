@@ -1,58 +1,102 @@
 ﻿using Fe.DTOs.Comment;
 using Fe.Services.Comment;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace Fe.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    // [Authorize(Roles = "Admin")] // Tạm thời comment lại để test
     public class QuestionsController : Controller
     {
         private readonly ICommentService _commentService;
+        private readonly ILogger<QuestionsController> _logger;
+        private const int PageSize = 10;
 
-        public QuestionsController(ICommentService commentService)
+        public QuestionsController(ICommentService commentService, ILogger<QuestionsController> logger)
         {
             _commentService = commentService;
+            _logger = logger;
         }
 
-        // GET: Admin/Question
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var comments = await _commentService.GetAllForDashboardAsync();
-            return View(comments);
-        }
-
-        // GET: Admin/Question/Reply/{id}
-        [HttpGet]
-        public async Task<IActionResult> Reply(int id)
-        {
-            var comment = await _commentService.GetByIdAsync(id);
-            if (comment == null)
-                return NotFound();
-
-            return View(comment);
-        }
-
-        // POST: Admin/Question/Reply
-        [HttpPost]
-        public async Task<IActionResult> Reply(int id, string replyContent)
-        {
-            if (string.IsNullOrWhiteSpace(replyContent))
+            try
             {
-                ModelState.AddModelError("", "Reply cannot be empty.");
-                return RedirectToAction("Reply", new { id });
-            }
+                _logger.LogInformation("Retrieving comments for dashboard, page {Page}", page);
+                var comments = await _commentService.GetAllForDashboardAsync();
+                var totalPages = (int)Math.Ceiling(comments.Count() / (double)PageSize);
+                page = Math.Max(1, Math.Min(page, totalPages));
 
-            await _commentService.ReplyAsync(id, replyContent);
-            return RedirectToAction("Index");
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.HasPreviousPage = page > 1;
+                ViewBag.HasNextPage = page < totalPages;
+
+                var paginatedComments = comments
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((page - 1) * PageSize)
+                    .Take(PageSize);
+
+                _logger.LogInformation("Retrieved {Count} comments for page {Page}", paginatedComments.Count(), page);
+                return View(paginatedComments);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving comments for dashboard");
+                TempData["Error"] = "An error occurred while retrieving comments. Please try again later.";
+                return View(Array.Empty<CommentDashboardDto>());
+            }
         }
 
-        // POST: Admin/Question/Delete
+        [HttpPost]
+        public async Task<IActionResult> Reply(int id, string content)
+        {
+            try
+            {
+                _logger.LogInformation("Processing reply for comment {CommentId}", id);
+                
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    _logger.LogWarning("Empty reply content for comment {CommentId}", id);
+                    return Json(new { success = false, message = "Reply content cannot be empty." });
+                }
+
+                // Tạm thời bỏ kiểm tra admin vì chưa có authentication
+                // var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                // if (string.IsNullOrEmpty(adminId))
+                // {
+                //     _logger.LogWarning("Unauthenticated admin attempting to reply to comment {CommentId}", id);
+                //     return Json(new { success = false, message = "Admin not authenticated." });
+                // }
+
+                await _commentService.ReplyAsync(id, content);
+                _logger.LogInformation("Successfully replied to comment {CommentId}", id);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error replying to comment {CommentId}", id);
+                return Json(new { success = false, message = "An error occurred while submitting the reply. Please try again later." });
+            }
+        }
+
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            await _commentService.DeleteAsync(id);
-            return RedirectToAction("Index");
+            try
+            {
+                _logger.LogInformation("Processing delete request for comment {CommentId}", id);
+                await _commentService.DeleteAsync(id);
+                _logger.LogInformation("Successfully deleted comment {CommentId}", id);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting comment {CommentId}", id);
+                return Json(new { success = false, message = "An error occurred while deleting the comment. Please try again later." });
+            }
         }
     }
 }

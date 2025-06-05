@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
+using System.Linq;
 
 namespace Fe.Areas.Web.Controllers
 {
@@ -25,24 +26,50 @@ namespace Fe.Areas.Web.Controllers
         {
             try
             {
-                _logger.LogInformation($"Received comment creation request for campaign {dto.CampaignId}");
-                
+                _logger.LogInformation($"Received comment creation request. DTO: {System.Text.Json.JsonSerializer.Serialize(dto)}");
+
+                // Validate model state
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning("Invalid model state for comment creation");
-                    return Json(new { success = false, message = "Invalid comment data" });
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage);
+                    return Json(new { success = false, message = string.Join(", ", errors) });
                 }
 
-                var response = await _commentService.CreateAsync(dto);
-                _logger.LogInformation($"Comment created successfully for campaign {dto.CampaignId}");
-
-                // Add logging for the CommentDto received from the service
-                _logger.LogInformation($"[FE Controller] Received CommentDto after creation: {System.Text.Json.JsonSerializer.Serialize(response)}");
-                _logger.LogInformation($"[FE Controller] Received CommentDto Content: '{response?.Content}'");
+                // Get current user if logged in
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userName = User.FindFirst(ClaimTypes.Name)?.Value;
                 
+                _logger.LogInformation($"Current user: {(userId != null ? userName : "Not logged in")}");
+
+                if (userId != null)
+                {
+                    try
+                    {
+                        dto.AccountId = int.Parse(userId);
+                        _logger.LogInformation($"Set AccountId to {dto.AccountId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error parsing user ID: {userId}");
+                        return Json(new { success = false, message = "Invalid user ID format" });
+                    }
+
+                    // If not anonymous, use user's name
+                    if (!dto.IsAnonymous)
+                    {
+                        dto.GuestName = userName;
+                        _logger.LogInformation($"Set GuestName to {dto.GuestName} for logged in user");
+                    }
+                }
+
+                _logger.LogInformation($"Calling comment service with DTO: {System.Text.Json.JsonSerializer.Serialize(dto)}");
+                var response = await _commentService.CreateAsync(dto);
+                _logger.LogInformation($"Comment service response: {System.Text.Json.JsonSerializer.Serialize(response)}");
+
                 if (response == null)
                 {
-                    _logger.LogWarning("Comment creation returned null response");
                     return Json(new { success = false, message = "Failed to create comment" });
                 }
 
@@ -62,7 +89,7 @@ namespace Fe.Areas.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error creating comment for campaign {dto.CampaignId}");
+                _logger.LogError(ex, $"Error creating comment for campaign {dto.CampaignId}. DTO: {System.Text.Json.JsonSerializer.Serialize(dto)}");
                 return Json(new { success = false, message = ex.Message ?? "An error occurred while creating the comment. Please try again." });
             }
         }
@@ -164,6 +191,33 @@ namespace Fe.Areas.Web.Controllers
             {
                 _logger.LogError(ex, $"Error deleting comment {commentId}");
                 return Json(new { success = false, message = "An error occurred while deleting the comment. Please try again." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> LoadMoreComments(int campaignId, int skip, int take = 5)
+        {
+            try
+            {
+                var comments = await _commentService.GetByCampaignAsync(campaignId);
+                var paginatedComments = comments
+                    .OrderByDescending(c => c.CommentedAt)
+                    .Skip(skip)
+                    .Take(take)
+                    .ToList();
+
+                return Json(new { 
+                    success = true, 
+                    comments = paginatedComments 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading more comments");
+                return Json(new { 
+                    success = false, 
+                    message = "Failed to load more comments" 
+                });
             }
         }
     }

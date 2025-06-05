@@ -10,6 +10,9 @@ using System.Linq;
 
 namespace Fe.Services.Comment
 {
+    /// <summary>
+    /// Generic API response wrapper class
+    /// </summary>
     public class ApiResponse<T>
     {
         public bool Success { get; set; }
@@ -17,6 +20,9 @@ namespace Fe.Services.Comment
         public T Data { get; set; }
     }
 
+    /// <summary>
+    /// Interface defining comment service operations
+    /// </summary>
     public interface ICommentService
     {
         Task<List<CommentDto>> GetByCampaignAsync(int campaignId);
@@ -27,6 +33,9 @@ namespace Fe.Services.Comment
         Task<CommentDto?> GetByIdAsync(int commentId);
     }
 
+    /// <summary>
+    /// Service class for handling comment-related operations
+    /// </summary>
     public class CommentService : ICommentService
     {
         private readonly HttpClient _httpClient;
@@ -40,6 +49,11 @@ namespace Fe.Services.Comment
             _logger = logger;
         }
 
+        /// <summary>
+        /// Retrieves all comments for a specific campaign
+        /// </summary>
+        /// <param name="campaignId">The ID of the campaign</param>
+        /// <returns>List of comments for the campaign</returns>
         public async Task<List<CommentDto>> GetByCampaignAsync(int campaignId)
         {
             try
@@ -57,19 +71,18 @@ namespace Fe.Services.Comment
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation($"Raw response content: {content}");
 
-                // First try to parse as JsonElement to check the structure
+                // Parse response based on its structure (array or object)
                 var jsonElement = JsonSerializer.Deserialize<JsonElement>(content);
-                
                 List<CommentDto> result;
                 
-                // If it's an array, parse it directly
                 if (jsonElement.ValueKind == JsonValueKind.Array)
                 {
+                    // Direct array of comments
                     result = JsonSerializer.Deserialize<List<CommentDto>>(content, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? new();
                 }
-                // If it's an object, check for success property
                 else if (jsonElement.ValueKind == JsonValueKind.Object)
                 {
+                    // Check for error response
                     if (jsonElement.TryGetProperty("success", out var successElement) && 
                         successElement.GetBoolean() == false)
                     {
@@ -94,7 +107,7 @@ namespace Fe.Services.Comment
                     result = new();
                 }
 
-                // Add logging for deserialized comment content
+                // Log deserialized comment details
                 _logger.LogInformation($"[FE Service] Deserialized comments count: {result.Count}");
                 foreach (var comment in result)
                 {
@@ -109,7 +122,7 @@ namespace Fe.Services.Comment
                     }
                 }
 
-                // Ensure all comments have a valid CommentedAt value
+                // Ensure all comments have valid timestamps
                 foreach (var comment in result)
                 {
                     if (comment.CommentedAt == default)
@@ -138,6 +151,11 @@ namespace Fe.Services.Comment
             }
         }
 
+        /// <summary>
+        /// Creates a new comment
+        /// </summary>
+        /// <param name="dto">The comment data to create</param>
+        /// <returns>The created comment</returns>
         public async Task<CommentDto> CreateAsync(CreateCommentDto dto)
         {
             try
@@ -155,7 +173,7 @@ namespace Fe.Services.Comment
                     throw new Exception($"Failed to create comment: {responseContent}");
                 }
 
-                // Try to parse as dynamic first to handle both response formats
+                // Parse response and handle different response formats
                 var dynamicResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
                 if (dynamicResponse.TryGetProperty("success", out var successElement) && 
                     successElement.GetBoolean() == false)
@@ -185,7 +203,7 @@ namespace Fe.Services.Comment
                     throw new Exception("Failed to create comment: Empty direct response");
                 }
 
-                // If CommentedAt is not set, set it to current time
+                // Set default timestamp if not provided
                 if (directResult.CommentedAt == default)
                 {
                     directResult.CommentedAt = DateTime.Now;
@@ -201,6 +219,10 @@ namespace Fe.Services.Comment
             }
         }
 
+        /// <summary>
+        /// Retrieves all comments for the admin dashboard
+        /// </summary>
+        /// <returns>List of comments for dashboard display</returns>
         public async Task<List<CommentDashboardDto>> GetAllForDashboardAsync()
         {
             try
@@ -226,6 +248,10 @@ namespace Fe.Services.Comment
             }
         }
 
+        /// <summary>
+        /// Deletes a comment by its ID
+        /// </summary>
+        /// <param name="commentId">The ID of the comment to delete</param>
         public async Task DeleteAsync(int commentId)
         {
             try
@@ -249,6 +275,11 @@ namespace Fe.Services.Comment
             }
         }
 
+        /// <summary>
+        /// Creates a reply to an existing comment
+        /// </summary>
+        /// <param name="commentId">The ID of the parent comment</param>
+        /// <param name="replyContent">The content of the reply</param>
         public async Task ReplyAsync(int commentId, string replyContent)
         {
             try
@@ -278,6 +309,11 @@ namespace Fe.Services.Comment
             }
         }
 
+        /// <summary>
+        /// Retrieves a specific comment by its ID
+        /// </summary>
+        /// <param name="commentId">The ID of the comment to retrieve</param>
+        /// <returns>The comment if found, null otherwise</returns>
         public async Task<CommentDto?> GetByIdAsync(int commentId)
         {
             try

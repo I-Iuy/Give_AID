@@ -1,11 +1,11 @@
 ﻿@model Fe.DTOs.Comment.CommentDto
 
 @{
-    ViewData["Title"] = "Reply to Question";
+    ViewData["Title"] = "Reply to Comment";
     Layout = "/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Reply to Question</h2>
+<h2>Reply to Comment</h2>
 
 <div class="card mt-4">
     <div class="card-body">
@@ -15,14 +15,14 @@
 
         <p><strong>Submitted At:</strong> @Model.CommentedAt.ToString("dd/MM/yyyy HH:mm")</p>
 
-        <p><strong>Question:</strong></p>
+        <p><strong>Comment:</strong></p>
         <div class="p-3 border bg-light mb-3">@Model.Content</div>
 
         @if (Model.IsReplied)
         {
             <div class="alert alert-info">
                 <i class="bi bi-check-circle-fill"></i>
-                This question has already been replied to.
+                This comment has already been replied to.
             </div>
         }
 

@@ -39,16 +39,74 @@ namespace Be.Services.Comment
                 throw new Exception("Comment content must be at least 3 characters long");
             }
 
-            // Check for sensitive keywords
-            var sensitiveWords = new[] { 
-                "spam", "advertisement", "quảng cáo", 
-                "sex", "porn", "xxx", "18+",
-                "hack", "crack", "virus",
-                "scam", "fraud", "cheat"
-            };
-            if (sensitiveWords.Any(word => content.ToLower().Contains(word)))
+            // Check for sensitive keywords in multiple languages
+            var sensitiveWords = new Dictionary<string, string[]>
             {
-                throw new Exception("Comment contains prohibited keywords");
+                ["en"] = new[] { "spam", "advertisement", "sex", "porn", "xxx", "18+", "hack", "crack", "virus", "scam", "fraud", "cheat" },
+                ["vi"] = new[] {
+                    // Basic words
+                    "địt", "đụ", "đéo", "đcm", "đkm", "đmm", "đít", "đụ", "đéo", "đcm", "đkm", "đmm",
+                    // Common phrases
+                    "địt mẹ", "đụ má", "đụ mẹ", "đụ cha", "đụ bố", "đụ ông", "đụ bà", "đụ cô", "đụ chú", "đụ dì",
+                    // Variations
+                    "quảng cáo", "khiêu dâm", "lừa đảo", "gian lận", "đồi trụy", "dâm ô", "bậy bạ", "thô tục", "tục tĩu",
+                    // Additional common words
+                    "đụ", "đụ má", "đụ mẹ", "đụ cha", "đụ bố", "đụ ông", "đụ bà", "đụ cô", "đụ chú", "đụ dì",
+                    "đụ anh", "đụ chị", "đụ em", "đụ cháu", "đụ con", "đụ vợ", "đụ chồng",
+                    "đụ gia đình", "đụ họ hàng", "đụ tổ tiên", "đụ ông bà", "đụ cha mẹ",
+                    "đụ anh em", "đụ chị em", "đụ cô chú", "đụ dì dượng", "đụ cậu mợ",
+                    "đụ chú thím", "đụ bác mợ", "đụ ông bà nội", "đụ ông bà ngoại",
+                    "đụ cha mẹ vợ", "đụ cha mẹ chồng", "đụ vợ chồng", "đụ con cái",
+                    "đụ cháu chắt", "đụ họ hàng", "đụ làng xóm", "đụ hàng xóm",
+                    "đụ bạn bè", "đụ đồng nghiệp", "đụ đồng đội", "đụ đồng bào",
+                    "đụ đồng hương", "đụ đồng môn"
+                },
+                ["zh"] = new[] { "广告", "色情", "病毒", "诈骗" },
+                ["ja"] = new[] { "広告", "ポルノ", "ウイルス", "詐欺" },
+                ["ko"] = new[] { "광고", "포르노", "바이러스", "사기" },
+                ["th"] = new[] { "โฆษณา", "อนาจาร", "ไวรัส", "การฉ้อโกง" },
+                ["id"] = new[] { "iklan", "pornografi", "virus", "penipuan" },
+                ["ms"] = new[] { "iklan", "pornografi", "virus", "penipuan" },
+                ["tl"] = new[] { "anunsyo", "pornograpiya", "virus", "panloloko" },
+                ["hi"] = new[] { "विज्ञापन", "अश्लील", "वायरस", "धोखाधड़ी" }
+            };
+
+            // Normalize Vietnamese text by removing diacritics
+            string NormalizeVietnamese(string text)
+            {
+                string normalized = text.Normalize(System.Text.NormalizationForm.FormD);
+                var chars = normalized.Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark).ToArray();
+                return new string(chars).Normalize(System.Text.NormalizationForm.FormC);
+            }
+
+            var contentLower = content.ToLower();
+            var normalizedContent = NormalizeVietnamese(contentLower);
+
+            // Check for sensitive words
+            foreach (var languageWords in sensitiveWords.Values)
+            {
+                foreach (var word in languageWords)
+                {
+                    var wordLower = word.ToLower();
+                    var normalizedWord = NormalizeVietnamese(wordLower);
+
+                    // Check both original and normalized versions
+                    if (contentLower.Contains(wordLower) || normalizedContent.Contains(normalizedWord))
+                    {
+                        throw new Exception("Comment contains prohibited keywords");
+                    }
+                }
+            }
+
+            // Check for word combinations
+            var words = contentLower.Split(new[] { ' ', ',', '.', '!', '?', ';', ':', '-', '_', '/', '\\', '|', '(', ')', '[', ']', '{', '}' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var word in words)
+            {
+                var normalizedWord = NormalizeVietnamese(word);
+                if (sensitiveWords.Values.Any(words => words.Any(w => NormalizeVietnamese(w.ToLower()) == normalizedWord)))
+                {
+                    throw new Exception("Comment contains prohibited keywords");
+                }
             }
 
             // Check for excessive special characters
@@ -74,6 +132,12 @@ namespace Be.Services.Comment
             if (Regex.IsMatch(content, @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"))
             {
                 throw new Exception("Email addresses are not allowed in comments");
+            }
+
+            // Check for maximum length
+            if (content.Length > 500)
+            {
+                throw new Exception("Comment cannot exceed 500 characters");
             }
         }
 
@@ -106,10 +170,10 @@ namespace Be.Services.Comment
                 Content = dto.Content,
                 IsAnonymous = dto.IsAnonymous,
                 AccountId = dto.AccountId,
-                GuestName = dto.GuestName,
+                GuestName = dto.IsAnonymous ? null : dto.GuestName, // Only set GuestName if not anonymous
                 CampaignId = dto.CampaignId,
                 ParentCommentId = dto.ParentCommentId,
-                CommentedAt = DateTime.UtcNow
+                CommentedAt = DateTime.Now // Use local time instead of UTC
             };
 
             Console.WriteLine($"[BE Service] Created comment object: {System.Text.Json.JsonSerializer.Serialize(comment)}");
@@ -250,7 +314,7 @@ namespace Be.Services.Comment
                 GuestName = "Admin",
                 CampaignId = parent.CampaignId,
                 ParentCommentId = parent.CommentId,
-                CommentedAt = DateTime.UtcNow
+                CommentedAt = DateTime.Now
             };
 
             await _commentRepository.SaveCommentAsync(reply);

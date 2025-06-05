@@ -4,24 +4,24 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="replyModalLabel">Reply to Question</h5>
+                <h5 class="modal-title" id="replyModalLabel">Reply to Comment</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form method="post" asp-area="Admin" asp-controller="Question" asp-action="Reply" asp-route-id="@Model.CommentId">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Question from @Model?.GuestName:</label>
+                        <label class="form-label fw-bold">Comment from @Model?.GuestName:</label>
                         <p class="form-control-plaintext">@Model?.Content</p>
                     </div>
 
                     <div class="mb-3">
-                        <label for="answerInput" class="form-label">Your Answer</label>
+                        <label for="answerInput" class="form-label">Your Reply</label>
                         <textarea class="form-control" id="answerInput" name="replyContent" rows="5"
-                                  placeholder="Type your answer here..."></textarea>
+                                  placeholder="Type your reply here..."></textarea>
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success">Submit</button>
+                        <button type="submit" class="btn btn-success">Submit Reply</button>
                     </div>
                 </form>
             </div>
