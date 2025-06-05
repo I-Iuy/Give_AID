@@ -400,12 +400,48 @@
 
 
 
-<!-- AJAX donation for Campaign of Purpose  -->
+<!-- AJAX donation for Campaign of Purpose -->
 <script>
     const allPurposes = @Html.Raw(Json.Serialize(purposes.Select(p => new { id = p.PurposeId, title = p.Title })));
-</script>
-<script>
-        document.querySelectorAll(".openDonationModal").forEach(function (btn) {
+
+    function bindDonationFormAjax() {
+        const form = document.querySelector("#donationFilterContent form");
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            fetch("/Web/Donation/Add", {
+                method: "POST",
+                body: formData
+            })
+            .then(res => res.text())
+            .then(html => {
+                const modalContent = document.getElementById("donationFilterContent");
+                modalContent.innerHTML = html;
+
+                const campaignTitle = modalContent.querySelector("#campaignTitle")?.value;
+                const purposeTitle = modalContent.querySelector("#purposeTitle")?.value;
+
+                const campaignIdInput = modalContent.querySelector('input[name="CampaignId"]');
+                const purposeSelect = modalContent.querySelector("#purposeSelect");
+                if (campaignIdInput?.value && purposeSelect) {
+                    purposeSelect.disabled = true;
+                }
+
+                const msg = modalContent.querySelector("#donationPurposeMessage");
+                if (msg && campaignTitle && purposeTitle) {
+                    msg.textContent = `You are donating to the campaign "${campaignTitle}" under the selected purpose "${purposeTitle}".`;
+                    msg.classList.remove("d-none");
+                }
+
+                bindDonationFormAjax();
+            });
+        });
+    }
+
+    document.querySelectorAll(".openDonationModal").forEach(function (btn) {
         btn.addEventListener("click", function () {
             const purposeTitle = this.getAttribute("data-selected-cause");
             const campaignId = this.getAttribute("data-campaign-id");
@@ -414,12 +450,7 @@
             const found = allPurposes.find(p => p.title === purposeTitle);
             const purposeId = found ? found.id : null;
 
-            if (!purposeId) {
-                alert("Purpose not found for: " + purposeTitle);
-                return;
-            }
-
-            fetch(`/Web/Donation/AddFromPost?purposeId=${purposeId}&campaignId=${campaignId ?? ""}`)
+            fetch(`/Web/Donation/AddFromPost?purposeId=${purposeId}&campaignId=${campaignId ?? ""}&campaignTitle=${encodeURIComponent(campaignTitle)}&purposeTitle=${encodeURIComponent(purposeTitle)}`)
                 .then(res => res.text())
                 .then(html => {
                     const modalContent = document.getElementById("donationFilterContent");
@@ -438,10 +469,14 @@
 
                     const modal = new bootstrap.Modal(document.getElementById("donationFilterModal"));
                     modal.show();
+
+                    bindDonationFormAjax();
                 });
         });
     });
 </script>
+
+
 
 
 

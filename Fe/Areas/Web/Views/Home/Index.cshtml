@@ -219,6 +219,28 @@
 
     <!-- AJAX donation for Select Purpose  -->
     <script>
+        function bindDonationFormAjax() {
+            const form = document.querySelector("#donationFilterContent form");
+            if (!form) return;
+
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                fetch("/Web/Donation/Add", {
+                    method: "POST",
+                    body: formData
+                })
+                    .then(res => res.text())
+                    .then(html => {
+                        const modalContent = document.getElementById("donationFilterContent");
+                        modalContent.innerHTML = html;
+
+                        bindDonationFormAjax();
+                    });
+            });
+        }
+
         document.getElementById("openDonationModal").addEventListener("click", function () {
             fetch("/Web/Donation/AddFromIndex")
                 .then(res => res.text())
@@ -229,9 +251,12 @@
                     const modalEl = document.getElementById("donationFilterModal");
                     const modal = new bootstrap.Modal(modalEl);
                     modal.show();
+
+                    bindDonationFormAjax();
                 });
         });
     </script>
+
 
 
 
