@@ -62,7 +62,7 @@
 
                 <!-- CTA buttons -->
                 <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-primary px-4 py-2" data-bs-toggle="modal" data-bs-target="#donationFilterModal">
+                    <a class="btn btn-primary px-4 py-2" id="openDonationModal">
                         @ViewData["IntroButtonText"]
                     </a>
                     <a class="btn btn-outline-primary px-4 py-2" href="/Web/Home/About/our-achievements">
@@ -158,6 +158,14 @@
         </a>
     </div>
 
+    <!-- FilterPartial.cshtml -->
+    <div class="modal fade" id="donationFilterModal" tabindex="-1" aria-labelledby="donationFilterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" id="donationFilterContent">
+            </div>
+        </div>
+    </div>
+
     <!-- Custom styling for text and section -->
     <style>
         .text-truncate-2 {
@@ -208,4 +216,23 @@
             }
         });
     </script>
+
+    <!-- AJAX donation for Select Purpose  -->
+    <script>
+        document.getElementById("openDonationModal").addEventListener("click", function () {
+            fetch("/Web/Donation/AddFromIndex")
+                .then(res => res.text())
+                .then(html => {
+                    const modalContent = document.getElementById("donationFilterContent");
+                    modalContent.innerHTML = html;
+
+                    const modalEl = document.getElementById("donationFilterModal");
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                });
+        });
+    </script>
+
+
+
 </div>

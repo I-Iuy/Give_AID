@@ -63,20 +63,6 @@ namespace Fe.Areas.Web.Controllers
                 public string LogoUrl { get; set; }
             }
         }
-
-        // Used to hold filter criteria for campaign search
-        public class DonationFilterModel
-        {
-            public string SelectedCause { get; set; }
-
-            // Predefined categories of causes
-            public List<string> Causes { get; set; } = new List<string>
-            {
-                "Children", "Disabled", "Education", "Elderly", "Employment",
-                "Environment", "Health", "Women", "Youth"
-            };
-        }
-
         // ====================== Helper Methods ======================
 
         // Extract the first image URL from raw HTML content using regex
@@ -199,14 +185,6 @@ namespace Fe.Areas.Web.Controllers
             ViewBag.UrgentCampaigns = urgentCampaigns;
 
             return View("Post", selectedPost);
-        }
-
-        // GET: Web/Home/FilterPartial
-        // Renders a dropdown/filter form as partial view
-        public IActionResult FilterPartial()
-        {
-            var model = new DonationFilterModel();
-            return PartialView("FilterPartial", model);
         }
 
         // GET: Web/Home/AllCampaigns

@@ -266,12 +266,12 @@
                         <p class="mb-2">
                             You can bring <strong>@Model.Title</strong> to life. Every small donation counts toward something bigger.
                         </p>
-                        <a class="btn btn-outline-danger w-100"
-                           data-bs-toggle="modal"
-                           data-bs-target="#donationFilterModal"
+                        <a class="btn btn-outline-danger w-100 openDonationModal"
                            data-selected-cause="@Model.Cause"
-                           data-program-title="@Model.Title">
-                            <i class="bi bi-heart-fill me-1"></i> Donate Now
+                           data-program-title="@Model.Title"
+                           data-campaign-id="@Model.CampaignId">
+
+                            <i class="bi bi-heart-fill me-1"></i> Donate Now    
                         </a>
                     </div>
                 </div>
@@ -316,6 +316,15 @@
         </div>
     </div>
 }
+
+<!-- FilterPartial.cshtml -->
+<div class="modal fade" id="donationFilterModal" tabindex="-1" aria-labelledby="donationFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" id="donationFilterContent">
+        </div>
+    </div>
+</div>
+
 
 <!-- Styling for article content -->
 <style>
@@ -388,3 +397,54 @@
         });
     });
 </script>
+
+
+
+<!-- AJAX donation for Campaign of Purpose  -->
+<script>
+    const allPurposes = @Html.Raw(Json.Serialize(purposes.Select(p => new { id = p.PurposeId, title = p.Title })));
+</script>
+<script>
+        document.querySelectorAll(".openDonationModal").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const purposeTitle = this.getAttribute("data-selected-cause");
+            const campaignId = this.getAttribute("data-campaign-id");
+            const campaignTitle = this.getAttribute("data-program-title");
+
+            const found = allPurposes.find(p => p.title === purposeTitle);
+            const purposeId = found ? found.id : null;
+
+            if (!purposeId) {
+                alert("Purpose not found for: " + purposeTitle);
+                return;
+            }
+
+            fetch(`/Web/Donation/AddFromPost?purposeId=${purposeId}&campaignId=${campaignId ?? ""}`)
+                .then(res => res.text())
+                .then(html => {
+                    const modalContent = document.getElementById("donationFilterContent");
+                    modalContent.innerHTML = html;
+
+                    const purposeSelect = modalContent.querySelector("#purposeSelect");
+                    if (campaignId && purposeSelect) {
+                        purposeSelect.disabled = true;
+                    }
+
+                    const msg = modalContent.querySelector("#donationPurposeMessage");
+                    if (msg) {
+                        msg.textContent = `You are donating to the campaign "${campaignTitle}" under the selected purpose "${purposeTitle}".`;
+                        msg.classList.remove("d-none");
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById("donationFilterModal"));
+                    modal.show();
+                });
+        });
+    });
+</script>
+
+
+
+
+
+
