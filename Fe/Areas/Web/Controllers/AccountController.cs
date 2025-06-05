@@ -80,14 +80,14 @@ namespace Fe.Areas.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["Message"] = "Please fill in all required fields correctly.";
-                TempData["MessageType"] = "danger";
                 return View(model);
             }
 
             var client = _clientFactory.CreateClient();
             var content = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
             var response = await client.PostAsync($"{_config["ApiSettings:BaseUrl"]}accounts/register", content);
+
+            var errorContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
@@ -96,40 +96,37 @@ namespace Fe.Areas.Web.Controllers
                 return RedirectToAction("Login");
             }
 
-            // Parse and simplify error message
-            var errorContent = await response.Content.ReadAsStringAsync();
-
             try
             {
                 var errorJson = JsonDocument.Parse(errorContent);
                 if (errorJson.RootElement.TryGetProperty("errors", out var errors))
                 {
-                    var sb = new StringBuilder();
                     foreach (var error in errors.EnumerateObject())
                     {
+                        var field = error.Name;
                         foreach (var msg in error.Value.EnumerateArray())
                         {
-                            sb.AppendLine($"{msg.GetString()}");
+                            ModelState.AddModelError(field, msg.GetString());
                         }
                     }
-
-                    TempData["Message"] = sb.ToString();
-                    TempData["MessageType"] = "danger";
+                }
+                else if (errorJson.RootElement.TryGetProperty("message", out var message))
+                {
+                    ModelState.AddModelError("", message.GetString());
                 }
                 else
                 {
-                    TempData["Message"] = "Registration failed. Please try again.";
-                    TempData["MessageType"] = "danger";
+                    ModelState.AddModelError("", "Registration failed. Please try again.");
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                TempData["Message"] = "An error occurred while registering. Please check your inputs.";
-                TempData["MessageType"] = "danger";
+                ModelState.AddModelError("", "An error occurred: " + ex.Message);
             }
 
             return View(model);
         }
+
 
 
 

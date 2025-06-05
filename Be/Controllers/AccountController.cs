@@ -38,7 +38,7 @@ namespace Be.Controllers
                 var shortErrors = ModelState.Where(e => e.Value.Errors.Count > 0)
                     .ToDictionary(
                         kvp => kvp.Key,
-                        kvp => kvp.Value.Errors.Select(err => err.ErrorMessage.Split('.').FirstOrDefault()).ToArray()
+                        kvp => kvp.Value.Errors.Select(err => err.ErrorMessage).ToArray()
                     );
                 return BadRequest(new { message = "Validation failed", errors = shortErrors });
             }

@@ -38,15 +38,6 @@
                                     <option value="+1">🇺🇸 +1</option>
                                     <option value="+61">🇦🇺 +61</option>
                                     <option value="+81">🇯🇵 +81</option>
-                                    <option value="+44">🇬🇧 +44</option>
-                                    <option value="+49">🇩🇪 +49</option>
-                                    <option value="+33">🇫🇷 +33</option>
-                                    <option value="+82">🇰🇷 +82</option>
-                                    <option value="+86">🇨🇳 +86</option>
-                                    <option value="+65">🇸🇬 +65</option>
-                                    <option value="+60">🇲🇾 +60</option>
-                                    <option value="+91">🇮🇳 +91</option>
-                                    <option value="+971">🇦🇪 +971</option>
                                 </select>
                                 <input id="phoneInput" class="form-control" placeholder="Enter phone number" />
                             </div>
@@ -66,33 +57,7 @@
                             <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
 
-                        <div class="form-floating mb-3">
-                            <input asp-for="Name" class="form-control" />
-                            <label asp-for="Name"></label>
-                            <span asp-validation-for="Name" class="text-danger"></span>
-                        </div>
-
                         <button type="submit" class="btn btn-primary w-100">Register</button>
-
-                        <div class="text-center my-3">
-                            <span class="text-muted">or</span>
-                        </div>
-
-                        <!-- Google Sign-In Button -->
-                        <div id="g_id_onload"
-                             data-client_id="1075692664543-0catpusg18j1htbf40jjnh9rln9co4lo.apps.googleusercontent.com"
-                             data-callback="handleCredentialResponse"
-                             data-auto_prompt="false">
-                        </div>
-
-                        <div class="g_id_signin"
-                             data-type="standard"
-                             data-size="large"
-                             data-theme="outline"
-                             data-text="continue_with"
-                             data-shape="rectangular"
-                             data-logo_alignment="left">
-                        </div>
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">
@@ -100,44 +65,27 @@
                         <a asp-action="Login">Have an account? Go to login</a>
                     </div>
                 </div>
-            </div>
 
-            @if (TempData["Message"] != null)
-            {
-                var alertType = TempData["MessageType"]?.ToString() ?? "info";
+                @if (TempData["Message"] != null)
+                {
+                    var alertType = TempData["MessageType"]?.ToString() ?? "info";
                     <div class="alert alert-@alertType mt-3 text-center white-space-pre-line">
-                    @TempData["Message"]
+                        @TempData["Message"]
                     </div>
-            }
+                }
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
-        <script>
-            async function handleCredentialResponse(response) {
-                const idToken = response.credential;
+    <partial name="_ValidationScriptsPartial" />
 
-                const res = await fetch('/Web/Account/GoogleCallback', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ idToken })
-                });
-
-                if (res.ok) {
-                    window.location.href = '/';
-                } else {
-                    alert("Google login failed");
-                }
-            }
-
-            document.getElementById("registerForm").addEventListener("submit", function (e) {
-                const code = document.getElementById("countryCode").value;
-                const number = document.getElementById("phoneInput").value.trim();
-                document.getElementById("Phone").value = code + number;
-            });
-        </script>
+    <script>
+        document.getElementById("registerForm").addEventListener("submit", function () {
+            const code = document.getElementById("countryCode").value;
+            const number = document.getElementById("phoneInput").value.trim();
+            document.getElementById("Phone").value = code + number;
+        });
+    </script>
 }
