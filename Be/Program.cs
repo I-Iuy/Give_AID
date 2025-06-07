@@ -30,7 +30,7 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
 // Email service for sending reset emails
-builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<EmailServices>();
 
 // ========================================
 // Configure JWT Authentication middleware

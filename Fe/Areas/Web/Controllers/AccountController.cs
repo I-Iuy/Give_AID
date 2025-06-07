@@ -212,6 +212,55 @@ namespace Fe.Areas.Web.Controllers
             return RedirectToAction("Login");
         }
 
+        // Handle account update form submission
+
+        [HttpGet]
+        public async Task<IActionResult> UpdateAccount()
+        {
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login");
+
+            var client = _clientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await client.GetAsync($"{_config["ApiSettings:BaseUrl"]}accounts/me");
+
+            if (!response.IsSuccessStatusCode)
+                return RedirectToAction("Login");
+
+            var json = await response.Content.ReadAsStringAsync();
+            var user = JsonSerializer.Deserialize<AccountUpdateViewModel>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return View(user);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateAccount(AccountUpdateViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login");
+
+            var client = _clientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var content = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+            var response = await client.PutAsync($"{_config["ApiSettings:BaseUrl"]}accounts/update", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["Success"] = "Account updated successfully!";
+                return RedirectToAction("MyAccount");
+            }
+
+            var error = await response.Content.ReadAsStringAsync();
+            ModelState.AddModelError("", $"Update failed: {error}");
+            return View(model);
+        }
+
+
+
         // Handle Google login callback
         [HttpPost]
         public async Task<IActionResult> GoogleCallback([FromBody] GoogleLoginDto model)

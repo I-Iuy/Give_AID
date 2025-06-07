@@ -41,17 +41,6 @@ public class AccountRepository : IAccountRepository
         return acc;
     }
 
-    // Delete account by ID
-    public async Task<bool> DeleteAsync(int id)
-    {
-        var acc = await _context.Accounts.FindAsync(id);
-        if (acc == null) return false;
-
-        _context.Accounts.Remove(acc);
-        await _context.SaveChangesAsync();
-        return true;
-    }
-
     // Login by email (no password check here, only active status)
     public async Task<Account?> LoginAsync(string email, string _)
     {

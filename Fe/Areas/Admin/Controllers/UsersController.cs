@@ -6,7 +6,9 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
+using Be.DTOs.Account;
 
 namespace Fe.Areas.Admin.Controllers
 {
@@ -47,7 +49,7 @@ namespace Fe.Areas.Admin.Controllers
         }
 
         // Display user list with filtering, sorting, and role search
-        public async Task<IActionResult> List(string? search, string? role, string sortBy = "FullName", bool desc = false)
+        public async Task<IActionResult> List(string sortBy = "FullName", bool desc = false)
         {
             var client = _clientFactory.CreateClient();
             var token = HttpContext.Session.GetString("JWT");
@@ -57,39 +59,32 @@ namespace Fe.Areas.Admin.Controllers
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Build API URL with optional parameters
-            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/all?sortBy={sortBy}&desc={desc.ToString().ToLower()}";
-
-            if (!string.IsNullOrWhiteSpace(search))
-                apiUrl += $"&search={Uri.EscapeDataString(search)}";
-            if (!string.IsNullOrWhiteSpace(role))
-                apiUrl += $"&role={Uri.EscapeDataString(role)}";
-
-            var response = await client.GetAsync(apiUrl);
+            var url = $"{_config["ApiSettings:BaseUrl"]}accounts/all?sortBy={sortBy}&desc={desc}";
+            var response = await client.GetAsync(url);
 
             if (!response.IsSuccessStatusCode)
             {
-                TempData["Message"] = "Failed to load user list.";
+                TempData["Message"] = "Failed to retrieve user list.";
                 TempData["MessageType"] = "danger";
                 return View(new List<User>());
             }
 
-            var json = await response.Content.ReadAsStringAsync();
-            var users = JsonSerializer.Deserialize<List<User>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var result = await response.Content.ReadAsStringAsync();
+            var users = JsonSerializer.Deserialize<List<User>>(result, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
 
-            // Store filtering and sorting state in ViewBag
-            ViewBag.Search = search;
-            ViewBag.Role = role;
-            ViewBag.SortBy = sortBy;
-            ViewBag.Desc = desc.ToString().ToLower();
+            
+            var filteredUsers = users.Where(u => u.Role != "Admin").ToList();
 
-            return View(users);
+            return View(filteredUsers);
         }
 
-        // Toggle user active status (block/unblock)
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ToggleStatus(int id, bool isActive)
+        public async Task<IActionResult> ToggleStatus(int id, bool isActive, string? reason)
         {
             var client = _clientFactory.CreateClient();
             var token = HttpContext.Session.GetString("JWT");
@@ -98,9 +93,22 @@ namespace Fe.Areas.Admin.Controllers
                 return RedirectToAction("Login", "Account", new { area = "Web" });
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/{id}/status";
 
-            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/{id}/status?isActive={isActive}";
-            var response = await client.PutAsync(apiUrl, null);
+            var payload = new
+            {
+                isActive,
+                reason = isActive ? "" : reason ?? "Blocked by admin."
+            };
+
+            var content = new StringContent(
+                JsonSerializer.Serialize(payload),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            var response = await client.PutAsync(apiUrl, content);
+            var errorDetail = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
@@ -109,14 +117,45 @@ namespace Fe.Areas.Admin.Controllers
             }
             else
             {
-                TempData["Message"] = "Failed to update user status.";
+                TempData["Message"] = $"Failed to update user status. Error: {errorDetail}";
                 TempData["MessageType"] = "danger";
             }
 
             return RedirectToAction("List");
         }
 
-        // Show user details by ID
+
+        // Block user via PUT (JavaScript Fetch with reason)
+        // PUT: Admin/Users/ToggleStatusWithReason (Block from Modal)
+        [HttpPut]
+        public async Task<IActionResult> ToggleStatusWithReason(int id, [FromBody] StatusUpdateDto dto)
+        {
+            var client = _clientFactory.CreateClient();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+                return Unauthorized();
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var apiUrl = $"{_config["ApiSettings:BaseUrl"]}accounts/{id}/status";
+
+            var content = new StringContent(
+                JsonSerializer.Serialize(dto),
+                Encoding.UTF8,
+                MediaTypeHeaderValue.Parse("application/json")
+            );
+
+            var response = await client.PutAsync(apiUrl, content);
+            var errorDetail = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+                return Ok(new { message = "User blocked successfully." });
+            else
+                return BadRequest(new { message = "Failed to block user", detail = errorDetail });
+        }
+
+
+        // GET: Admin/Users/Details/{id}
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {

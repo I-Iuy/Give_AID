@@ -24,9 +24,9 @@ namespace Be.Controllers
         private readonly IAccountRepository _repository;
         private readonly JwtService _jwtService;
         private readonly IConfiguration _config;
-        private readonly EmailService _emailService;
+        private readonly EmailServices _emailService;
 
-        public AccountsController(IAccountRepository repository, JwtService jwtService, IConfiguration config, EmailService emailService)
+        public AccountsController(IAccountRepository repository, JwtService jwtService, IConfiguration config, EmailServices emailService)
         {
             _repository = repository;
             _jwtService = jwtService;
@@ -131,12 +131,29 @@ namespace Be.Controllers
         // -------------------------------
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
-        public async Task<IActionResult> SetStatus(int id, [FromQuery] bool isActive)
+        public async Task<IActionResult> SetStatus(int id, [FromBody] StatusUpdateDto dto)
         {
-            var success = await _repository.SetAccountStatusAsync(id, isActive);
+            var success = await _repository.SetAccountStatusAsync(id, dto.IsActive);
             if (!success) return NotFound();
-            return Ok(new { message = $"Account {(isActive ? "activated" : "deactivated")} successfully." });
+
+            if (!dto.IsActive)
+            {
+                var account = await _repository.GetByIdAsync(id);
+                if (account != null)
+                {
+                    await _emailService.SendCustomEmail(
+                        account.Email,
+                        "Your account has been blocked",
+                        $"Dear {account.FullName ?? account.Email},\n\nYour account has been blocked for the following reason:\n\n{dto.Reason}\n\nIf you believe this is a mistake, please contact support."
+                    );
+                }
+            }
+
+            return Ok(new { message = $"Account {(dto.IsActive ? "activated" : "deactivated")} successfully." });
         }
+
+
+
 
         // -------------------------------
         // POST: api/accounts/google-login

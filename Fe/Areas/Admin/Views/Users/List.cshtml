@@ -1,9 +1,7 @@
 ﻿@model List<Fe.Areas.Admin.Controllers.UsersController.User>
-
 @{
     ViewData["Title"] = "User List";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
-
     string currentSort = Context.Request.Query["sortBy"];
     bool currentDesc = Context.Request.Query["desc"] == "true";
 }
@@ -26,42 +24,15 @@
     </ol>
 
     <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-table me-1"></i>
-            List of Registered Users
-        </div>
+        <div class="card-header"><i class="fas fa-table me-1"></i>List of Registered Users</div>
         <div class="card-body">
-            <table id="datatablesSimple" class="table table-bordered">
+            <table class="table table-bordered">
                 <thead class="table-light">
                     <tr>
-                        <th>
-                            <a asp-action="List"
-                               asp-route-sortBy="FullName"
-                               asp-route-desc="@(currentSort == "FullName" && !currentDesc)">
-                                Full Name @(currentSort == "FullName" ? (currentDesc ? "🔽" : "🔼") : "")
-                            </a>
-                        </th>
-                        <th>
-                            <a asp-action="List"
-                               asp-route-sortBy="Email"
-                               asp-route-desc="@(currentSort == "Email" && !currentDesc)">
-                                Email @(currentSort == "Email" ? (currentDesc ? "🔽" : "🔼") : "")
-                            </a>
-                        </th>
-                        <th>
-                            <a asp-action="List"
-                               asp-route-sortBy="DisplayName"
-                               asp-route-desc="@(currentSort == "DisplayName" && !currentDesc)">
-                                Display Name @(currentSort == "DisplayName" ? (currentDesc ? "🔽" : "🔼") : "")
-                            </a>
-                        </th>
-                        <th>
-                            <a asp-action="List"
-                               asp-route-sortBy="Role"
-                               asp-route-desc="@(currentSort == "Role" && !currentDesc)">
-                                Role @(currentSort == "Role" ? (currentDesc ? "🔽" : "🔼") : "")
-                            </a>
-                        </th>
+                        <th><a asp-action="List" asp-route-sortBy="FullName" asp-route-desc="@(currentSort == "FullName" && !currentDesc)">Full Name @(currentSort == "FullName" ? (currentDesc ? "🔽" : "🔼") : "")</a></th>
+                        <th><a asp-action="List" asp-route-sortBy="Email" asp-route-desc="@(currentSort == "Email" && !currentDesc)">Email @(currentSort == "Email" ? (currentDesc ? "🔽" : "🔼") : "")</a></th>
+                        <th><a asp-action="List" asp-route-sortBy="DisplayName" asp-route-desc="@(currentSort == "DisplayName" && !currentDesc)">Display Name @(currentSort == "DisplayName" ? (currentDesc ? "🔽" : "🔼") : "")</a></th>
+                        <th><a asp-action="List" asp-route-sortBy="Role" asp-route-desc="@(currentSort == "Role" && !currentDesc)">Role @(currentSort == "Role" ? (currentDesc ? "🔽" : "🔼") : "")</a></th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -80,7 +51,7 @@
                                 </span>
                             </td>
                             <td class="d-flex">
-                                <a class="btn btn-info btn-sm text-white me-1"
+                                <a class="btn btn-info btn-sm me-1 text-white"
                                    asp-area="Admin"
                                    asp-controller="Users"
                                    asp-action="Details"
@@ -88,14 +59,23 @@
                                     <i class="fas fa-eye"></i> Details
                                 </a>
 
-                                <form asp-area="Admin" asp-controller="Users" asp-action="ToggleStatus" method="post" onsubmit="return confirm('Are you sure?')">
-                                    <input type="hidden" name="id" value="@user.AccountId" />
-                                    <input type="hidden" name="isActive" value="@(user.IsActive ? "false" : "true")" />
-                                    <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-danger" : "btn-success") text-white">
-                                        <i class="fas @(user.IsActive ? "fa-ban" : "fa-check")"></i>
-                                        @(user.IsActive ? "Block" : "Unblock")
+                                @if (user.IsActive)
+                                {
+                                    <button class="btn btn-danger btn-sm text-white" onclick="confirmBlock(@user.AccountId)">
+                                        <i class="fas fa-ban"></i> Block
                                     </button>
-                                </form>
+                                }
+                                else
+                                {
+                                    <form asp-area="Admin" asp-controller="Users" asp-action="ToggleStatus" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@user.AccountId" />
+                                        <input type="hidden" name="isActive" value="true" />
+                                        <button type="submit" class="btn btn-success btn-sm text-white">
+                                            <i class="fas fa-check"></i> Unblock
+                                        </button>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }
@@ -104,3 +84,37 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for block reason -->
+<div class="modal fade" id="blockReasonModal" tabindex="-1" aria-labelledby="blockReasonModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-area="Admin" asp-controller="Users" asp-action="ToggleStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="blockUserId" />
+                <input type="hidden" name="isActive" value="false" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="blockReasonModalLabel">Block User - Reason</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea class="form-control" name="reason" id="blockReasonText" rows="4" placeholder="Enter reason..." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Block User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmBlock(userId) {
+            document.getElementById("blockUserId").value = userId;
+            document.getElementById("blockReasonText").value = "";
+            var modal = new bootstrap.Modal(document.getElementById("blockReasonModal"));
+            modal.show();
+        }
+    </script>
+}
