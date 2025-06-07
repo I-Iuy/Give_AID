@@ -128,7 +128,7 @@ namespace Fe.Areas.Admin.Controllers
         // Block user via PUT (JavaScript Fetch with reason)
         // PUT: Admin/Users/ToggleStatusWithReason (Block from Modal)
         [HttpPut]
-        public async Task<IActionResult> ToggleStatusWithReason(int id, [FromBody] StatusUpdateDto dto)
+        public async Task<IActionResult> ToggleStatusWithReason(int id, [FromBody] StatusUpdateViewModel dto)
         {
             var client = _clientFactory.CreateClient();
             var token = HttpContext.Session.GetString("JWT");
