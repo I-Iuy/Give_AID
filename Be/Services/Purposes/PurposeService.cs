@@ -24,7 +24,8 @@ namespace Be.Services.Purposes
             return purposes.Select(p => new PurposeDto
             {
                 PurposeId = p.PurposeId,
-                Title = p.Title
+                Title = p.Title,
+                AccountId = p.AccountId
             });
         }
         // Get purpose by ID
@@ -34,7 +35,8 @@ namespace Be.Services.Purposes
             return new PurposeDto
             {
                 PurposeId = p.PurposeId,
-                Title = p.Title
+                Title = p.Title,
+                AccountId = p.AccountId
             };
         }
         // Check if Title is valid 

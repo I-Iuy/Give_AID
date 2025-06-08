@@ -15,5 +15,9 @@ namespace Be.Models
         public ICollection<CampaignNgo> CampaignNgos { get; set; }
         public ICollection<CampaignPartner> CampaignPartners { get; set; }
 
+        // Merge Code Member: Long 
+        public Account Account { get; set; }
+        public Purpose Purpose { get; set; }
+        public ICollection<Comment> Comments { get; set; }
     }
 }
